@@ -1,5 +1,5 @@
 import Image from "next/image";
-import RegistrationPage from "./Registeration/Page";
+import RegistrationPage from "./Pages/Registeration/Page";
 export default function Home() {
   return (
     <div className="">
