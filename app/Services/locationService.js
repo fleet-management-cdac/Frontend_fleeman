@@ -1,16 +1,18 @@
-const BASE_URL = "http://localhost:8080/api/locations";
+const API_BASE = "http://localhost:8080/api/locations";
 
-export async function getStates() {
-  const res = await fetch(`${BASE_URL}/states`);
+async function apiFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP error ${res.status}`);
+  }
   return res.json();
 }
 
-export async function getCitiesByState(stateId) {
-  const res = await fetch(`${BASE_URL}/cities?stateId=${stateId}`);
-  return res.json();
-}
+export const fetchStates = () =>
+  apiFetch(`${API_BASE}/states`);
 
-export async function getHubsByCity(cityId) {
-  const res = await fetch(`${BASE_URL}/hubs?cityId=${cityId}`);
-  return res.json();
-}
+export const fetchCities = (stateId) =>
+  apiFetch(`${API_BASE}/cities/state/${stateId}`);
+
+export const fetchHubs = (cityId) =>
+  apiFetch(`${API_BASE}/hubs/city/${cityId}`);
