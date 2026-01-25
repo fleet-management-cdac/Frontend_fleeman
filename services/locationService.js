@@ -7,6 +7,12 @@ export const getAllStates = async () => {
 };
 
 // === CITIES ===
+// NEW: Added this function to support the "Drop Location" dropdown
+// export const getAllCities = async () => {
+//     const response = await api.get('/api/locations/cities');
+//     return response.data;
+// };
+
 export const getCitiesByState = async (stateId) => {
     const response = await api.get(`/api/locations/cities/state/${stateId}`);
     return response.data;

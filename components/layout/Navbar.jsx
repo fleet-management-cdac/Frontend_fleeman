@@ -30,9 +30,9 @@ export default function Navbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-6">
-                        <Link href="/vehicles" className="text-gray-600 hover:text-gray-900 transition">
+                        {/* <Link href="/vehicles" className="text-gray-600 hover:text-gray-900 transition">
                             Vehicles
-                        </Link>
+                        </Link> */}
                         {user ? (
                             <>
                                 <Link href="/my-bookings" className="text-gray-600 hover:text-gray-900 transition">
