@@ -6,9 +6,11 @@ import { useAuth } from '../../../context/AuthContext';
 import { getAllBookings } from '../../../services/bookingService';
 import Card from '../../../components/ui/Card';
 import Spinner from '../../../components/ui/Spinner';
+import { useRouter } from 'next/navigation';
 
 export default function StaffDashboard() {
     const { user } = useAuth();
+    const router = useRouter();
     const [stats, setStats] = useState({
         reserved: 0,
         active: 0,
@@ -18,6 +20,8 @@ export default function StaffDashboard() {
     });
     const [recentBookings, setRecentBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const [searchId, setSearchId] = useState('');
 
     useEffect(() => {
         fetchDashboardData();
@@ -57,6 +61,15 @@ export default function StaffDashboard() {
         }
     };
 
+    // --- Search Handler ---
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchId.trim()) {
+            // Navigate to the specific booking details page
+            router.push(`/staff/bookings/${searchId}`);
+        }
+    };
+
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('en-IN', {
@@ -81,10 +94,42 @@ export default function StaffDashboard() {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Welcome back! 👋</h1>
-                <p className="text-gray-500">Here's what's happening today.</p>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+                {/* Left Side: Welcome Text */}
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        Welcome back Staff ! <span>👋</span>
+                    </h1>
+                    <p className="text-gray-500 mt-1">Here's what's happening today.</p>
+                </div>
+
+           {/* Right Side: Search Form */}
+                <form onSubmit={handleSearch} className="w-full md:w-auto">
+                    <div className="flex w-full md:w-96 shadow-sm rounded-lg overflow-hidden border border-gray-300">
+                        <div className="relative flex-grow">
+                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                className="w-full py-2.5 pl-10 pr-4 text-sm text-gray-900 bg-white focus:outline-none"
+                                placeholder="Search by Booking ID..."
+                                value={searchId}
+                                onChange={(e) => setSearchId(e.target.value)}
+                            />
+                        </div>
+                        <button 
+                            type="submit" 
+                            className="bg-blue-600 text-white px-6 py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            Search
+                        </button>
+                    </div>
+                </form>
             </div>
+            
 
             {/* Today's Summary */}
             <div className="grid md:grid-cols-4 gap-4 mb-8">
@@ -171,7 +216,7 @@ export default function StaffDashboard() {
             </div>
 
             {/* Recent Bookings */}
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-1 gap-6">
                 <Card>
                     <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                         <h2 className="font-semibold text-gray-900">Recent Bookings</h2>
@@ -209,51 +254,7 @@ export default function StaffDashboard() {
                     </div>
                 </Card>
 
-                {/* Today's Schedule */}
-                <Card>
-                    <div className="p-4 border-b border-gray-100">
-                        <h2 className="font-semibold text-gray-900">Today's Schedule</h2>
-                    </div>
-                    <div className="p-4 space-y-4">
-                        <div className="flex items-center gap-4 p-3 bg-yellow-50 rounded-lg">
-                            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-700">
-                                🔑
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-yellow-800">Pickups Due</p>
-                                <p className="text-sm text-yellow-600">{stats.todayPickups} customers waiting</p>
-                            </div>
-                            {stats.todayPickups > 0 && (
-                                <Link href="/staff/handover" className="text-yellow-700 text-sm font-medium hover:underline">
-                                    Start →
-                                </Link>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-4 p-3 bg-green-50 rounded-lg">
-                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-700">
-                                ↩️
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-green-800">Returns Due</p>
-                                <p className="text-sm text-green-600">{stats.todayReturns} vehicles expected</p>
-                            </div>
-                            {stats.todayReturns > 0 && (
-                                <Link href="/staff/returns" className="text-green-700 text-sm font-medium hover:underline">
-                                    Start →
-                                </Link>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-700">
-                                ✅
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium text-blue-800">Completed Today</p>
-                                <p className="text-sm text-blue-600">{stats.completed} total completed</p>
-                            </div>
-                        </div>
-                    </div>
-                </Card>
+                
             </div>
         </div>
     );

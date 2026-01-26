@@ -15,7 +15,7 @@ import { formatCurrency } from '../../lib/utils';
 function VehiclesList() {
     const searchParams = useSearchParams();
     const pickupHub = searchParams.get('pickupHub');
-    const dropHub = searchParams.get('dropHub');
+    const returnHub = searchParams.get('returnHub');
     const pickupDate = searchParams.get('pickupDate');
     const returnDate = searchParams.get('returnDate');
 
@@ -61,7 +61,7 @@ function VehiclesList() {
             vehicleId: vehicleId.toString(),
             rateId: rateId?.toString() || '1',
             pickupHub: pickupHub || '',
-            dropHub: dropHub || pickupHub || '',
+            returnHub: returnHub || pickupHub || '',
             pickupDate: pickupDate || '',
             returnDate: returnDate || '',
         });

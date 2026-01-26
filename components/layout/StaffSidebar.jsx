@@ -4,19 +4,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const menuItems = [
     { name: 'Dashboard', href: '/staff/dashboard', icon: '📊' },
+    { name: 'Booking', href: '/', icon: '🚗' },
+    { name: 'Hubs', href:'/staff/upload', icon:'📍'}
 ];
 
 export default function StaffSidebar() {
     const pathname = usePathname();
     const { user, logout } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
+    const router = useRouter();
 
     const handleLogout = () => {
         logout();
-        window.location.href = '/login';
+        router.replace('/login');
     };
 
     return (

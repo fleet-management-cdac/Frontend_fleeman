@@ -40,9 +40,24 @@ export default function StaffBookingsPage() {
         }
     };
 
+    // --- UPDATED FILTER LOGIC ---
     const filteredBookings = bookings.filter((booking) => {
-        const matchesSearch = booking.id.toString().includes(search) || booking.customerName?.toLowerCase().includes(search.toLowerCase()) || booking.vehicleName?.toLowerCase().includes(search.toLowerCase());
+        const searchTerm = search.toLowerCase();
+
+        // FIX 1: Use booking.bookingId instead of booking.id
+        const matchesId = booking.bookingId?.toString().includes(searchTerm);
+
+        // FIX 2: Access nested user object for name
+        const customerName = `${booking.user?.firstName || ''} ${booking.user?.lastName || ''}`.toLowerCase();
+        const matchesName = customerName.includes(searchTerm);
+
+        // FIX 3: Access nested vehicle object for name
+        const vehicleName = `${booking.vehicle?.make || ''} ${booking.vehicle?.model || ''}`.toLowerCase();
+        const matchesVehicle = vehicleName.includes(searchTerm);
+
+        const matchesSearch = matchesId || matchesName || matchesVehicle;
         const matchesFilter = filter === 'all' || booking.status === filter;
+
         return matchesSearch && matchesFilter;
     });
 
@@ -88,18 +103,38 @@ export default function StaffBookingsPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {filteredBookings.map((booking) => (
-                                <tr key={booking.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">#{booking.id}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">{booking.customerName || 'N/A'}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">{booking.vehicleName || 'N/A'}</td>
+                                // FIX: Use bookingId for key
+                                <tr key={booking.bookingId || booking.id} className="hover:bg-gray-50">
+                                    
+                                    {/* FIX 1: Display bookingId */}
+                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                        #{booking.bookingId}
+                                    </td>
+
+                                    {/* FIX 2: Display User Name correctly */}
+                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                        {booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'N/A'}
+                                    </td>
+
+                                    {/* FIX 3: Display Vehicle Name correctly */}
+                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                        {booking.vehicle ? `${booking.vehicle.make} ${booking.vehicle.model}` : 'N/A'}
+                                    </td>
+
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(booking.pickupDatetime)}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(booking.returnDatetime)}</td>
                                     <td className="px-6 py-4"><Badge status={booking.status}>{booking.status}</Badge></td>
                                     <td className="px-6 py-4">
                                         <div className="flex gap-2">
-                                            <Link href={`/staff/bookings/${booking.id}`}><Button variant="ghost" size="sm">View</Button></Link>
+                                            {/* FIX: Link uses bookingId */}
+                                            <Link href={`/staff/bookings/${booking.bookingId}`}>
+                                                <Button variant="ghost" size="sm">View</Button>
+                                            </Link>
+                                            
                                             {booking.status === 'reserved' && (
-                                                <Button variant="success" size="sm" onClick={() => handleStatusChange(booking.id, 'confirmed')}>Confirm</Button>
+                                                <Button variant="success" size="sm" onClick={() => handleStatusChange(booking.bookingId, 'confirmed')}>
+                                                    Confirm
+                                                </Button>
                                             )}
                                         </div>
                                     </td>

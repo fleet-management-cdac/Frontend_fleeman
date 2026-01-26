@@ -23,7 +23,7 @@ function BookingForm() {
     const vehicleId = searchParams.get('vehicleId');
     const rateId = searchParams.get('rateId');
     const pickupHub = searchParams.get('pickupHub');
-    const dropHub = searchParams.get('dropHub');
+    const returnHub = searchParams.get('returnHub');
     const pickupDate = searchParams.get('pickupDate');
     const returnDate = searchParams.get('returnDate');
 
@@ -171,7 +171,7 @@ function BookingForm() {
                 rateId: parseInt(rateId) || 1,
                 addonId: selectedAddonId,  // Include selected addon
                 pickupHubId: parseInt(pickupHub),
-                returnHubId: parseInt(dropHub) || parseInt(pickupHub),
+                returnHubId: parseInt(returnHub) || parseInt(pickupHub),
                 pickupDatetime: formatDatetime(pickupDate),
                 returnDatetime: formatDatetime(returnDate),
                 firstName: formData.firstName,
