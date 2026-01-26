@@ -182,7 +182,11 @@ export default function StaffDashboard() {
                             <div className="p-8 text-center text-gray-400">No bookings yet</div>
                         ) : (
                             recentBookings.map((booking) => (
-                                <div key={booking.bookingId || booking.id} className="p-4 hover:bg-gray-50">
+                                <Link
+                                    key={booking.bookingId || booking.id}
+                                    href={`/staff/bookings/${booking.bookingId || booking.id}`}
+                                    className="block p-4 hover:bg-blue-50 transition cursor-pointer"
+                                >
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <p className="font-medium text-gray-900">
@@ -199,7 +203,7 @@ export default function StaffDashboard() {
                                     <p className="text-xs text-gray-400 mt-1">
                                         {formatDate(booking.pickupDatetime)} → {formatDate(booking.returnDatetime)}
                                     </p>
-                                </div>
+                                </Link>
                             ))
                         )}
                     </div>

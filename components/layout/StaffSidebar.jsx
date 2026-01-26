@@ -7,11 +7,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
     { name: 'Dashboard', href: '/staff/dashboard', icon: '📊' },
-    { name: 'Bookings', href: '/staff/bookings', icon: '📋' },
-    { name: 'Vehicles', href: '/staff/vehicles', icon: '🚗' },
-    { name: 'Handover', href: '/staff/handover', icon: '🔑' },
-    { name: 'Returns', href: '/staff/returns', icon: '📄' },
-    { name: 'Hubs', href: '/staff/hubs', icon: '📍' },
 ];
 
 export default function StaffSidebar() {
