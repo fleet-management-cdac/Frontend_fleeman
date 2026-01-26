@@ -88,6 +88,19 @@ function SearchableAirportSelect({ airports, value, onChange, name, error, place
 
 export default function Home() {
   const router = useRouter();
+
+  // Hero background images (6-image rotation)
+const heroImages = [
+  "/hero/hero1.png",
+  "/hero/hero2.png",
+  "/hero/hero3.png",
+  "/hero/hero4.png",
+  "/hero/hero5.png",
+  "/hero/hero6.png",
+];
+
+const [currentHero, setCurrentHero] = useState(0);
+
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [hubs, setHubs] = useState([]);
@@ -103,6 +116,14 @@ export default function Home() {
     returnStateId: "", returnCityId: "", returnType: "hub", returnHubId: "", returnAirportId: "",
     pickupDate: "", pickupTime: "10:00", returnDate: "", returnTime: "10:00",
   });
+
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentHero((prev) => (prev + 1) % heroImages.length);
+  }, 5000); // change every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
 
   useEffect(() => { fetchStates(); fetchAllAirports(); }, []);
   useEffect(() => { if (formData.stateId) { fetchCities(formData.stateId); fetchPickupAirports(formData.stateId); } else { setPickupAirports(allAirports); } }, [formData.stateId, allAirports]);
@@ -184,7 +205,11 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <section className="relative w-full bg-cover bg-center text-white min-h-[85vh] flex items-center" style={{ backgroundImage: "url('/banner.png')" }}>
+      <section className="relative w-full bg-cover bg-center text-white min-h-[85vh] flex items-center" style={{
+  backgroundImage: `url(${heroImages[currentHero]})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+}}>
         <div className="max-w-7xl mx-auto px-4 w-full">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div></div>
