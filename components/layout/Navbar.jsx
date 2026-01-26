@@ -4,13 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
+import LanguageSelector from '../ui/LanguageSelector';
+import { useI18n } from '../../context/I18nContext';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const { t } = useI18n(); 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
+        // Using window.location.href ensures a clean state reset on logout
         window.location.href = '/';
     };
 
@@ -30,41 +34,42 @@ export default function Navbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-6">
-                        {/* <Link href="/vehicles" className="text-gray-600 hover:text-gray-900 transition">
-                            Vehicles
-                        </Link> */}
+                        <LanguageSelector />
+
                         {user ? (
                             <>
-                                <Link href="/my-bookings" className="text-gray-600 hover:text-gray-900 transition">
-                                    My Bookings
+                                <Link href="/my-bookings" className="text-gray-600 hover:text-gray-900 transition font-medium">
+                                    {t('nav_my_bookings')}
                                 </Link>
-                                <Link href="/profile" className="text-gray-600 hover:text-gray-900 transition">
-                                    Profile
+                                <Link href="/profile" className="text-gray-600 hover:text-gray-900 transition font-medium">
+                                    {t('nav_profile')}
                                 </Link>
                                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-                                    <span className="text-sm text-gray-500">{user.email}</span>
+                                    <span className="text-sm text-gray-500 hidden lg:inline">{user.email}</span>
                                     <Button variant="ghost" size="sm" onClick={handleLogout}>
-                                        Logout
+                                        {t('logout')}
                                     </Button>
                                 </div>
                             </>
                         ) : (
                             <div className="flex items-center gap-3">
                                 <Link href="/login">
-                                    <Button variant="ghost" size="sm">Login</Button>
+                                    <Button variant="ghost" size="sm">{t('login')}</Button>
                                 </Link>
                                 <Link href="/register">
-                                    <Button size="sm">Register</Button>
+                                    <Button size="sm">{t('register')}</Button>
                                 </Link>
                             </div>
                         )}
                     </div>
 
-                    {/* Mobile menu button */}
-                    <div className="md:hidden flex items-center">
+                    {/* Mobile Controls */}
+                    <div className="md:hidden flex items-center gap-4">
+                        <LanguageSelector />
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="text-gray-600 hover:text-gray-900 p-2"
+                            aria-label="Toggle Menu"
                         >
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 {mobileMenuOpen ? (
@@ -77,34 +82,51 @@ export default function Navbar() {
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile Dropdown Menu */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden py-4 border-t border-gray-100">
-                        <div className="flex flex-col gap-3">
-                            <Link href="/vehicles" className="text-gray-600 hover:text-gray-900 py-2">
-                                Vehicles
+                    <div className="md:hidden py-4 border-t border-gray-100 bg-gray-50 px-2 rounded-b-lg">
+                        <div className="flex flex-col gap-2">
+                            <Link 
+                                href="/vehicles" 
+                                className="text-gray-700 hover:bg-blue-50 px-3 py-2 rounded-md transition"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                {t('nav_vehicles')}
                             </Link>
+                            
                             {user ? (
                                 <>
-                                    <Link href="/my-bookings" className="text-gray-600 hover:text-gray-900 py-2">
-                                        My Bookings
+                                    <Link 
+                                        href="/my-bookings" 
+                                        className="text-gray-700 hover:bg-blue-50 px-3 py-2 rounded-md transition"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {t('nav_my_bookings')}
                                     </Link>
-                                    <Link href="/profile" className="text-gray-600 hover:text-gray-900 py-2">
-                                        Profile
+                                    <Link 
+                                        href="/profile" 
+                                        className="text-gray-700 hover:bg-blue-50 px-3 py-2 rounded-md transition"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {t('nav_profile')}
                                     </Link>
-                                    <button onClick={handleLogout} className="text-left text-gray-600 hover:text-gray-900 py-2">
-                                        Logout
+                                    <hr className="my-1 border-gray-200" />
+                                    <button 
+                                        onClick={handleLogout} 
+                                        className="text-left text-red-600 hover:bg-red-50 px-3 py-2 rounded-md transition font-medium"
+                                    >
+                                        {t('logout')}
                                     </button>
                                 </>
                             ) : (
-                                <>
-                                    <Link href="/login" className="text-gray-600 hover:text-gray-900 py-2">
-                                        Login
+                                <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-gray-200">
+                                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                                        <Button variant="ghost" className="w-full justify-start">{t('login')}</Button>
                                     </Link>
-                                    <Link href="/register" className="text-gray-600 hover:text-gray-900 py-2">
-                                        Register
+                                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                                        <Button className="w-full justify-start">{t('register')}</Button>
                                     </Link>
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>

@@ -7,6 +7,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import { useI18n } from "../context/I18nContext"; // 1. Import I18n
 import {
   getAllStates,
   getCitiesByState,
@@ -16,9 +17,10 @@ import {
 } from "../services/locationService";
 
 // Searchable Airport Dropdown Component
-function SearchableAirportSelect({ airports, value, onChange, name, error, placeholder = "Search airports..." }) {
+function SearchableAirportSelect({ airports, value, onChange, name, error, placeholder }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const { t } = useI18n(); // Use translation for "No found" messages
   const ref = useRef(null);
 
   const selectedAirport = airports.find(a => (a.airportId || a.id) == value);
@@ -55,13 +57,13 @@ function SearchableAirportSelect({ airports, value, onChange, name, error, place
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Type to search..."
+            placeholder={t('search_placeholder')}
             className="w-full px-3 py-2 border-b border-gray-200 text-sm focus:outline-none"
             autoFocus
           />
           <div className="max-h-32 overflow-y-auto">
             {filteredAirports.length === 0 ? (
-              <div className="px-3 py-2 text-gray-400 text-sm">No airports found</div>
+              <div className="px-3 py-2 text-gray-400 text-sm">{t('no_airports_found')}</div>
             ) : (
               filteredAirports.map((airport) => (
                 <button
@@ -88,6 +90,8 @@ function SearchableAirportSelect({ airports, value, onChange, name, error, place
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useI18n(); // 2. Initialize Translation Function
+
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [hubs, setHubs] = useState([]);
@@ -133,34 +137,29 @@ export default function Home() {
 
   const validateForm = () => {
     const e = {};
-    if (formData.pickupType === "hub") { if (!formData.stateId) e.stateId = "Required"; if (!formData.cityId) e.cityId = "Required"; if (!formData.pickupHubId) e.pickupHubId = "Required"; }
-    else { if (!formData.pickupAirportId) e.pickupAirportId = "Required"; }
-    if (formData.returnType === "hub") { if (!formData.returnStateId) e.returnStateId = "Required"; if (!formData.returnCityId) e.returnCityId = "Required"; if (!formData.returnHubId) e.returnHubId = "Required"; }
-    else { if (!formData.returnAirportId) e.returnAirportId = "Required"; }
-    if (!formData.pickupDate) e.pickupDate = "Required";
-    if (!formData.returnDate) e.returnDate = "Required";
-    if (formData.pickupDate && formData.returnDate && new Date(formData.returnDate) < new Date(formData.pickupDate)) e.returnDate = "Invalid";
+    if (formData.pickupType === "hub") { if (!formData.stateId) e.stateId = t('required'); if (!formData.cityId) e.cityId = t('required'); if (!formData.pickupHubId) e.pickupHubId = t('required'); }
+    else { if (!formData.pickupAirportId) e.pickupAirportId = t('required'); }
+    if (formData.returnType === "hub") { if (!formData.returnStateId) e.returnStateId = t('required'); if (!formData.returnCityId) e.returnCityId = t('required'); if (!formData.returnHubId) e.returnHubId = t('required'); }
+    else { if (!formData.returnAirportId) e.returnAirportId = t('required'); }
+    if (!formData.pickupDate) e.pickupDate = t('required');
+    if (!formData.returnDate) e.returnDate = t('required');
+    if (formData.pickupDate && formData.returnDate && new Date(formData.returnDate) < new Date(formData.pickupDate)) e.returnDate = t('invalid_date');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSearch = () => {
     if (!validateForm()) return;
-
-    // Get the hub_id for pickup - either from hub or from airport's hub
     let pickupHubId = formData.pickupHubId;
     if (formData.pickupType === "airport") {
       const selectedAirport = pickupAirports.find(a => (a.airportId || a.id) == formData.pickupAirportId);
       pickupHubId = selectedAirport?.hubId || selectedAirport?.hub?.id || "";
     }
-
-    // Get the hub_id for return - either from hub or from airport's hub
     let returnHubId = formData.returnHubId;
     if (formData.returnType === "airport") {
       const selectedAirport = returnAirports.find(a => (a.airportId || a.id) == formData.returnAirportId);
       returnHubId = selectedAirport?.hubId || selectedAirport?.hub?.id || "";
     }
-
     const params = new URLSearchParams({
       pickupHub: pickupHubId,
       returnHub: returnHubId,
@@ -189,29 +188,29 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div></div>
             <Card className="p-5 bg-white/95 backdrop-blur text-gray-900 shadow-xl">
-              <h2 className="text-lg font-bold mb-4 text-gray-900">🚗 Find Your Ride</h2>
+              <h2 className="text-lg font-bold mb-4 text-gray-900">🚗 {t('find_ride')}</h2>
 
               <div className="grid grid-cols-2 gap-4">
                 {/* PICKUP */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
-                    <span className="text-sm font-semibold text-gray-700">Pickup</span>
+                    <span className="text-sm font-semibold text-gray-700">{t('pickup')}</span>
                   </div>
                   <div className="flex gap-1">
                     <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "hub" } })}
-                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "hub" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 Hub</button>
+                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "hub" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 {t('hub')}</button>
                     <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "airport" } })}
-                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "airport" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ Airport</button>
+                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "airport" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ {t('airport')}</button>
                   </div>
                   {formData.pickupType === "hub" ? (
                     <>
-                      <SelectBox name="stateId" value={formData.stateId} onChange={handleChange} options={states} placeholder="State" error={errors.stateId} idKey="stateId" nameKey="stateName" />
-                      <SelectBox name="cityId" value={formData.cityId} onChange={handleChange} disabled={!formData.stateId} options={cities} placeholder="City" error={errors.cityId} idKey="cityId" nameKey="cityName" />
-                      <SelectBox name="pickupHubId" value={formData.pickupHubId} onChange={handleChange} disabled={!formData.cityId} options={hubs} placeholder="Hub" error={errors.pickupHubId} idKey="hubId" nameKey="hubName" />
+                      <SelectBox name="stateId" value={formData.stateId} onChange={handleChange} options={states} placeholder={t('select_state')} error={errors.stateId} idKey="stateId" nameKey="stateName" />
+                      <SelectBox name="cityId" value={formData.cityId} onChange={handleChange} disabled={!formData.stateId} options={cities} placeholder={t('select_city')} error={errors.cityId} idKey="cityId" nameKey="cityName" />
+                      <SelectBox name="pickupHubId" value={formData.pickupHubId} onChange={handleChange} disabled={!formData.cityId} options={hubs} placeholder={t('select_hub')} error={errors.pickupHubId} idKey="hubId" nameKey="hubName" />
                     </>
                   ) : (
-                    <SearchableAirportSelect airports={pickupAirports} value={formData.pickupAirportId} onChange={handleChange} name="pickupAirportId" error={errors.pickupAirportId} placeholder="Search airport..." />
+                    <SearchableAirportSelect airports={pickupAirports} value={formData.pickupAirportId} onChange={handleChange} name="pickupAirportId" error={errors.pickupAirportId} placeholder={t('search_airport')} />
                   )}
                   <div className="flex gap-2">
                     <input type="date" name="pickupDate" value={formData.pickupDate} onChange={handleChange} min={minDate}
@@ -225,22 +224,22 @@ export default function Home() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">2</span>
-                    <span className="text-sm font-semibold text-gray-700">Return</span>
+                    <span className="text-sm font-semibold text-gray-700">{t('return')}</span>
                   </div>
                   <div className="flex gap-1">
                     <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "hub" } })}
-                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "hub" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 Hub</button>
+                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "hub" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 {t('hub')}</button>
                     <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "airport" } })}
-                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "airport" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ Airport</button>
+                      className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "airport" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ {t('airport')}</button>
                   </div>
                   {formData.returnType === "hub" ? (
                     <>
-                      <SelectBox name="returnStateId" value={formData.returnStateId} onChange={handleChange} options={states} placeholder="State" error={errors.returnStateId} idKey="stateId" nameKey="stateName" />
-                      <SelectBox name="returnCityId" value={formData.returnCityId} onChange={handleChange} disabled={!formData.returnStateId} options={returnCities} placeholder="City" error={errors.returnCityId} idKey="cityId" nameKey="cityName" />
-                      <SelectBox name="returnHubId" value={formData.returnHubId} onChange={handleChange} disabled={!formData.returnCityId} options={returnHubs} placeholder="Hub" error={errors.returnHubId} idKey="hubId" nameKey="hubName" />
+                      <SelectBox name="returnStateId" value={formData.returnStateId} onChange={handleChange} options={states} placeholder={t('select_state')} error={errors.returnStateId} idKey="stateId" nameKey="stateName" />
+                      <SelectBox name="returnCityId" value={formData.returnCityId} onChange={handleChange} disabled={!formData.returnStateId} options={returnCities} placeholder={t('select_city')} error={errors.returnCityId} idKey="cityId" nameKey="cityName" />
+                      <SelectBox name="returnHubId" value={formData.returnHubId} onChange={handleChange} disabled={!formData.returnCityId} options={returnHubs} placeholder={t('select_hub')} error={errors.returnHubId} idKey="hubId" nameKey="hubName" />
                     </>
                   ) : (
-                    <SearchableAirportSelect airports={returnAirports} value={formData.returnAirportId} onChange={handleChange} name="returnAirportId" error={errors.returnAirportId} placeholder="Search airport..." />
+                    <SearchableAirportSelect airports={returnAirports} value={formData.returnAirportId} onChange={handleChange} name="returnAirportId" error={errors.returnAirportId} placeholder={t('search_airport')} />
                   )}
                   <div className="flex gap-2">
                     <input type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} min={formData.pickupDate || minDate}
@@ -251,7 +250,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <Button onClick={handleSearch} className="w-full mt-4" size="lg">Search Vehicles</Button>
+              <Button onClick={handleSearch} className="w-full mt-4" size="lg">{t('search_vehicles_btn')}</Button>
             </Card>
           </div>
         </div>
@@ -260,9 +259,13 @@ export default function Home() {
       {/* Features */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-10">Why Choose FLEMAN?</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-10">{t('why_choose_title')}</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {[{ icon: "💰", title: "Transparent Pricing", desc: "No hidden charges" }, { icon: "✅", title: "Easy Booking", desc: "Book in minutes" }, { icon: "📍", title: "Multiple Locations", desc: "Hubs & airports" }].map((f, i) => (
+            {[
+              { icon: "💰", title: t('feat_price_title'), desc: t('feat_price_desc') }, 
+              { icon: "✅", title: t('feat_book_title'), desc: t('feat_book_desc') }, 
+              { icon: "📍", title: t('feat_loc_title'), desc: t('feat_loc_desc') }
+            ].map((f, i) => (
               <div key={i} className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4"><span className="text-2xl">{f.icon}</span></div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
@@ -276,9 +279,9 @@ export default function Home() {
       {/* CTA */}
       <section className="py-16 bg-gray-900 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Hit the Road?</h2>
-          <p className="text-gray-300 mb-6">Join thousands of happy customers.</p>
-          <Link href="/register"><Button size="lg" className="bg-blue-600 hover:bg-blue-700">Create Free Account</Button></Link>
+          <h2 className="text-3xl font-bold mb-4">{t('ready_to_road')}</h2>
+          <p className="text-gray-300 mb-6">{t('join_thousands')}</p>
+          <Link href="/register"><Button size="lg" className="bg-blue-600 hover:bg-blue-700">{t('create_account_btn')}</Button></Link>
         </div>
       </section>
 
