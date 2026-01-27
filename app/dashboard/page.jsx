@@ -134,7 +134,7 @@ export default function CustomerDashboard() {
                                         <div key={booking.id} className="p-4 hover:bg-gray-50 transition">
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <p className="font-medium text-gray-900">{booking.vehicleName || 'Vehicle'}</p>
+                                                    <p className="font-medium text-gray-900">{booking.vehicleTypeName || booking.vehicleName || 'Vehicle'}</p>
                                                     <p className="text-sm text-gray-500">{formatDate(booking.pickupDatetime)} - {formatDate(booking.returnDatetime)}</p>
                                                 </div>
                                                 <div className="text-right">

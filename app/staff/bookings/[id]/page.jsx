@@ -26,10 +26,23 @@ export default function BookingDetailPage() {
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [vehicleSearch, setVehicleSearch] = useState('');
     const [fuelStatus, setFuelStatus] = useState('full');
-    const [odometerReading, setOdometerReading] = useState('');
-    const [notes, setNotes] = useState('');
     const [processing, setProcessing] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Return/Invoice state
+    const [invoice, setInvoice] = useState(null);
+    const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0]);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [transactionId, setTransactionId] = useState(null);
+
+    // Load Razorpay script
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+        return () => document.body.removeChild(script);
+    }, []);
 
     useEffect(() => {
         if (bookingId) {
@@ -60,17 +73,20 @@ export default function BookingDetailPage() {
         if (!booking) return;
 
         try {
-            const hubId = booking.pickupHubId;
-            const vehicleTypeId = booking.vehicleTypeId;
+            console.log('Fetching vehicles for booking:', booking);
 
-            let url = `${API_BASE_URL}/api/vehicles/available`;
-            const params = [];
-            if (hubId) params.push(`hubId=${hubId}`);
-            if (vehicleTypeId) params.push(`vehicleTypeId=${vehicleTypeId}`);
-            if (params.length > 0) url += '?' + params.join('&');
+            // Build API URL with query params
+            const params = new URLSearchParams();
+            if (booking.vehicleTypeId) params.append('vehicleTypeId', booking.vehicleTypeId);
+            // Note: We could also add hubId and date filters if needed
+
+            const url = `${API_BASE_URL}/api/vehicles/available-for-handover?${params.toString()}`;
+            console.log('Fetching from:', url);
 
             const response = await fetch(url, { credentials: 'omit' });
             const vehicles = await response.json();
+
+            console.log('Available vehicles:', vehicles);
             setAvailableVehicles(Array.isArray(vehicles) ? vehicles : []);
         } catch (error) {
             console.error('Error fetching vehicles:', error);
@@ -100,7 +116,7 @@ export default function BookingDetailPage() {
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'omit',
                 body: JSON.stringify({
-                    bookingId: bookingId,
+                    bookingId: parseInt(bookingId),
                     processedBy: user.id,
                     vehicleId: selectedVehicle.vehicleId,
                     fuelStatus: fuelStatus
@@ -134,6 +150,128 @@ export default function BookingDetailPage() {
         return new Date(dateString).toLocaleDateString('en-IN', {
             day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
         });
+    };
+
+    const handleReturn = async () => {
+        setProcessing(true);
+        setMessage({ type: '', text: '' });
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/invoices/return`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'omit',
+                body: JSON.stringify({
+                    bookingId: parseInt(bookingId),
+                    actualReturnDate: returnDate
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInvoice(data.data);
+                setMessage({ type: 'success', text: '✅ Vehicle returned! Invoice generated.' });
+            } else {
+                setMessage({ type: 'error', text: data.message || 'Return failed' });
+            }
+        } catch (error) {
+            console.error('Return error:', error);
+            setMessage({ type: 'error', text: 'Failed to process return' });
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0);
+    };
+
+    const handlePayment = async () => {
+        if (!invoice) return;
+
+        setProcessing(true);
+        setMessage({ type: '', text: '' });
+
+        try {
+            // Step 1: Create Razorpay order
+            const orderResponse = await fetch(`${API_BASE_URL}/api/payments/create-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'omit',
+                body: JSON.stringify({ invoiceId: invoice.invoiceId })
+            });
+
+            const orderData = await orderResponse.json();
+
+            if (!orderData.success) {
+                setMessage({ type: 'error', text: orderData.message || 'Failed to create order' });
+                setProcessing(false);
+                return;
+            }
+
+            const { orderId, amount, keyId } = orderData.data;
+
+            // Step 2: Open Razorpay checkout
+            const options = {
+                key: keyId,
+                amount: amount * 100, // Amount in paise
+                currency: 'INR',
+                name: 'Fleet Management',
+                description: `Invoice #${invoice.invoiceId}`,
+                order_id: orderId,
+                handler: async function (response) {
+                    // Step 3: Verify payment
+                    try {
+                        const verifyResponse = await fetch(`${API_BASE_URL}/api/payments/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'omit',
+                            body: JSON.stringify({
+                                invoiceId: invoice.invoiceId,
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+
+                        if (verifyData.success) {
+                            setTransactionId(verifyData.data.transactionId);
+                            setPaymentSuccess(true);
+                            setMessage({ type: 'success', text: '✅ Payment successful!' });
+                        } else {
+                            setMessage({ type: 'error', text: verifyData.message || 'Payment verification failed' });
+                        }
+                    } catch (err) {
+                        console.error('Verify error:', err);
+                        setMessage({ type: 'error', text: 'Payment verification failed' });
+                    }
+                    setProcessing(false);
+                },
+                prefill: {
+                    name: invoice.customerName,
+                    email: invoice.customerEmail
+                },
+                theme: {
+                    color: '#3b82f6'
+                },
+                modal: {
+                    ondismiss: function () {
+                        setProcessing(false);
+                    }
+                }
+            };
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
+
+        } catch (error) {
+            console.error('Payment error:', error);
+            setMessage({ type: 'error', text: 'Failed to initiate payment' });
+            setProcessing(false);
+        }
     };
 
     const filteredVehicles = availableVehicles.filter(v => {
@@ -295,30 +433,6 @@ export default function BookingDetailPage() {
                                 </select>
                             </div>
 
-                            {/* Odometer */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Odometer Reading (km)</label>
-                                <input
-                                    type="number"
-                                    value={odometerReading}
-                                    onChange={(e) => setOdometerReading(e.target.value)}
-                                    placeholder="Enter current odometer reading"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* Notes */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Notes / Remarks</label>
-                                <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="Any scratches, damages, or special notes..."
-                                    rows={3}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
                             <Button
                                 onClick={handleCompleteHandover}
                                 disabled={processing}
@@ -380,10 +494,132 @@ export default function BookingDetailPage() {
                 </div>
             )}
 
-            {/* Already Active message */}
-            {step === 1 && booking?.status === 'active' && (
-                <Card className="mt-6 p-4 bg-green-50 border-green-200">
-                    <p className="text-green-800 font-medium">✅ This booking is already active. The vehicle has been handed over to the customer.</p>
+            {/* Return Vehicle - For Active bookings */}
+            {step === 1 && booking?.status === 'active' && !invoice && (
+                <Card className="mt-6 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🚗 Return Vehicle</h3>
+                    <p className="text-sm text-gray-600 mb-4">Vehicle is currently with customer. Process return when they bring it back.</p>
+
+                    <div className="flex items-end gap-4">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Actual Return Date</label>
+                            <input
+                                type="date"
+                                value={returnDate}
+                                onChange={(e) => setReturnDate(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <Button onClick={handleReturn} disabled={processing} size="lg">
+                            {processing ? 'Processing...' : '📋 Generate Invoice'}
+                        </Button>
+                    </div>
+                </Card>
+            )}
+
+            {/* Invoice Display */}
+            {invoice && (
+                <Card className="mt-6 p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-xl font-bold text-gray-900">📋 Invoice #{invoice.invoiceId}</h3>
+                        <Badge status="completed" className="text-lg px-4 py-2">Generated</Badge>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* Customer & Vehicle Info */}
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between py-2 border-b">
+                                <span className="text-gray-500">Customer</span>
+                                <span className="font-medium">{invoice.customerName}</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                                <span className="text-gray-500">Vehicle</span>
+                                <span className="font-medium">{invoice.vehicleName}</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                                <span className="text-gray-500">Registration</span>
+                                <span className="font-medium">{invoice.vehicleRegistration}</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                                <span className="text-gray-500">Handover Date</span>
+                                <span className="font-medium">{invoice.handoverDate}</span>
+                            </div>
+                            <div className="flex justify-between py-2 border-b">
+                                <span className="text-gray-500">Return Date</span>
+                                <span className="font-medium">{invoice.returnDate}</span>
+                            </div>
+                            <div className="flex justify-between py-2">
+                                <span className="text-gray-500">Total Days</span>
+                                <span className="font-bold text-blue-600">{invoice.totalDays} day(s)</span>
+                            </div>
+                        </div>
+
+                        {/* Pricing Breakdown */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <h4 className="font-semibold text-gray-900 mb-3">💰 Pricing Breakdown</h4>
+                            <div className="space-y-2 text-sm">
+                                {invoice.daysCharged > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>{invoice.daysCharged} day(s) × {formatCurrency(invoice.dailyRate)}</span>
+                                        <span className="font-medium">{formatCurrency(invoice.dailyAmount)}</span>
+                                    </div>
+                                )}
+                                {invoice.weeksCharged > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>{invoice.weeksCharged} week(s) × {formatCurrency(invoice.weeklyRate)}</span>
+                                        <span className="font-medium">{formatCurrency(invoice.weeklyAmount)}</span>
+                                    </div>
+                                )}
+                                {invoice.monthsCharged > 0 && (
+                                    <div className="flex justify-between">
+                                        <span>{invoice.monthsCharged} month(s) × {formatCurrency(invoice.monthlyRate)}</span>
+                                        <span className="font-medium">{formatCurrency(invoice.monthlyAmount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between border-t pt-2">
+                                    <span>Rental Amount</span>
+                                    <span className="font-medium">{formatCurrency(invoice.rentalAmount)}</span>
+                                </div>
+                                {invoice.addonName && (
+                                    <div className="flex justify-between">
+                                        <span>{invoice.addonName}</span>
+                                        <span className="font-medium">{formatCurrency(invoice.addonTotalAmount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between border-t pt-2 text-lg font-bold text-green-700">
+                                    <span>Total Amount</span>
+                                    <span>{formatCurrency(invoice.totalAmount)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Payment Button */}
+                    {!paymentSuccess ? (
+                        <div className="mt-6 flex gap-4">
+                            <Button
+                                size="lg"
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                onClick={handlePayment}
+                                disabled={processing}
+                            >
+                                {processing ? 'Processing...' : `💳 Pay Now - ${formatCurrency(invoice.totalAmount)}`}
+                            </Button>
+                            <Button variant="outline" onClick={() => router.push('/staff/dashboard')}>
+                                Back to Dashboard
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="mt-6">
+                            <div className="bg-green-100 border border-green-300 rounded-lg p-4 mb-4">
+                                <p className="text-green-800 font-bold text-lg">✅ Payment Successful!</p>
+                                <p className="text-green-700">Transaction ID: <span className="font-mono font-bold">{transactionId}</span></p>
+                            </div>
+                            <Button onClick={() => router.push('/staff/dashboard')} className="w-full">
+                                Back to Dashboard
+                            </Button>
+                        </div>
+                    )}
                 </Card>
             )}
         </div>

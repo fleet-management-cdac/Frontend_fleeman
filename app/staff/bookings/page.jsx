@@ -41,7 +41,8 @@ export default function StaffBookingsPage() {
     };
 
     const filteredBookings = bookings.filter((booking) => {
-        const matchesSearch = booking.id.toString().includes(search) || booking.customerName?.toLowerCase().includes(search.toLowerCase()) || booking.vehicleName?.toLowerCase().includes(search.toLowerCase());
+        const vehicleInfo = booking.vehicleTypeName || booking.vehicleName || '';
+        const matchesSearch = booking.id.toString().includes(search) || booking.customerName?.toLowerCase().includes(search.toLowerCase()) || vehicleInfo.toLowerCase().includes(search.toLowerCase());
         const matchesFilter = filter === 'all' || booking.status === filter;
         return matchesSearch && matchesFilter;
     });
@@ -91,7 +92,7 @@ export default function StaffBookingsPage() {
                                 <tr key={booking.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">#{booking.id}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{booking.customerName || 'N/A'}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">{booking.vehicleName || 'N/A'}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{booking.vehicleTypeName || booking.vehicleName || 'N/A'}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(booking.pickupDatetime)}</td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(booking.returnDatetime)}</td>
                                     <td className="px-6 py-4"><Badge status={booking.status}>{booking.status}</Badge></td>

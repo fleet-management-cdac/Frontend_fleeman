@@ -1,5 +1,6 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
+import { I18nProvider } from '../context/I18nContext';
 
 export const metadata = {
     title: 'FLEMAN - Fleet Management & Vehicle Rental',
@@ -14,7 +15,9 @@ export default function RootLayout({ children }) {
             </head>
             <body className="min-h-screen bg-gray-50">
                 <AuthProvider>
-                    {children}
+                    <I18nProvider>
+                        {children}
+                    </I18nProvider>
                 </AuthProvider>
             </body>
         </html>

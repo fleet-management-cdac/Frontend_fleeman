@@ -1,36 +1,32 @@
 import api from '../lib/api';
 
-// === LANGUAGES ===
-export const getAllLanguages = async () => {
-    const response = await api.get('/api/i18n/languages');
-    return response.data;
-};
+/**
+ * Get all available languages
+ * GET /api/i18n/languages
+ * @returns {Promise<Array>} List of languages with id, code, name, isDefault
+ */
+export async function getLanguages() {
+    try {
+        const response = await api.get('/api/i18n/languages');
+        return response.data?.data || [];
+    } catch (error) {
+        console.error('Failed to fetch languages:', error);
+        return [];
+    }
+}
 
-export const getLanguageCodes = async () => {
-    const response = await api.get('/api/i18n/languages/codes');
-    return response.data;
-};
-
-export const getDefaultLanguage = async () => {
-    const response = await api.get('/api/i18n/languages/default');
-    return response.data;
-};
-
-// === TRANSLATIONS ===
-export const getTranslationsMap = async (languageId) => {
-    const response = await api.get(`/api/i18n/translations/${languageId}/map`);
-    return response.data;
-};
-
-export const getTranslationsByCode = async (langCode) => {
-    const response = await api.get(`/api/i18n/translations/code/${langCode}`);
-    return response.data;
-};
-
-// Single translation
-export const translate = async (key, lang = 'en') => {
-    const response = await api.get('/api/translations/translate', {
-        params: { key, lang }
-    });
-    return response.data;
-};
+/**
+ * Get all translations for a language code
+ * GET /api/i18n/translations/{code}
+ * @param {string} code - Language code (e.g., 'en', 'hi', 'mr')
+ * @returns {Promise<Object>} Key-value map of translations
+ */
+export async function getTranslations(code) {
+    try {
+        const response = await api.get(`/api/i18n/translations/${code}`);
+        return response.data?.data || {};
+    } catch (error) {
+        console.error(`Failed to fetch translations for ${code}:`, error);
+        return {};
+    }
+}
