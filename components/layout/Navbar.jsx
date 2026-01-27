@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
+import LanguageSelector from '../ui/LanguageSelector';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
@@ -30,9 +31,7 @@ export default function Navbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-6">
-                        {/* <Link href="/vehicles" className="text-gray-600 hover:text-gray-900 transition">
-                            Vehicles
-                        </Link> */}
+                        <LanguageSelector />
                         {user ? (
                             <>
                                 <Link href="/my-bookings" className="text-gray-600 hover:text-gray-900 transition">

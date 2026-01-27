@@ -102,7 +102,7 @@ export default function MyBookingsPage() {
                                                     <span className="text-2xl">🚗</span>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold text-gray-900 text-lg">{booking.vehicleName || 'Vehicle'}</h3>
+                                                    <h3 className="font-semibold text-gray-900 text-lg">{booking.vehicleTypeName || booking.vehicleName || 'Vehicle'}</h3>
                                                     <p className="text-gray-500 text-sm">Booking #{booking.id}</p>
                                                     <div className="flex items-center gap-2 mt-2"><Badge status={booking.status}>{booking.status}</Badge></div>
                                                 </div>
