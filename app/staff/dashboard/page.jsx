@@ -113,18 +113,7 @@ export default function StaffDashboard() {
                             Overview of fleet operations for <span className="font-medium text-gray-900">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </p>
                     </div>
-                    <div className="flex gap-3">
-                        <Link href="/staff/handover">
-                            <Button className="shadow-sm">
-                                <span className="mr-2">🔑</span> New Handover
-                            </Button>
-                        </Link>
-                        <Link href="/staff/returns">
-                            <Button variant="outline" className="bg-white">
-                                <span className="mr-2">↩️</span> Process Return
-                            </Button>
-                        </Link>
-                    </div>
+
                 </div>
 
                 {/* KPI Grid */}

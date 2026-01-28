@@ -81,6 +81,12 @@ export default function InvoiceSection({
                                 <span className="font-medium">{formatCurrency(invoice.addonTotalAmount)}</span>
                             </div>
                         )}
+                        {invoice.discountAmount > 0 && (
+                            <div className="flex justify-between text-green-600 font-medium">
+                                <span>Discount ({invoice.offerName})</span>
+                                <span>-{formatCurrency(invoice.discountAmount)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between border-t pt-2 text-lg font-bold text-green-700">
                             <span>Total Amount</span>
                             <span>{formatCurrency(invoice.totalAmount)}</span>

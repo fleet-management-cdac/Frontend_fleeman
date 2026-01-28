@@ -5,10 +5,12 @@ import Footer from "../components/layout/Footer";
 import HeroSection from "../components/landing/HeroSection";
 import FeaturesSection from "../components/landing/FeaturesSection";
 import CTASection from "../components/landing/CTASection";
+import OfferBanner from "../components/landing/OfferBanner";
 
 export default function Home() {
   return (
     <>
+      <OfferBanner />
       <Navbar />
       <HeroSection />
       <FeaturesSection />

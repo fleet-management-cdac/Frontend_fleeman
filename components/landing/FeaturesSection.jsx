@@ -17,23 +17,23 @@ export default function FeaturesSection() {
   const features = [
     {
       imgSrc: "/Calender.jpg",
-      title: "Flexible Scheduling",
-      desc: "Instant booking with your choice of pickup and return dates."
+      title: t('home.features.flexible_scheduling_title', 'Flexible Scheduling'),
+      desc: t('home.features.flexible_scheduling_desc', 'Instant booking with your choice of pickup and return dates.')
     },
     {
       imgSrc: "/freefuel.jpg",
-      title: "Free Fuel",
-      desc: "First tank is on us. Drive without worrying about refueling costs."
+      title: t('home.features.free_fuel_title', 'Free Fuel'),
+      desc: t('home.features.free_fuel_desc', 'First tank is on us. Drive without worrying about refueling costs.')
     },
     {
       imgSrc: "/roadside_assistance.jpg",
-      title: "24/7 Roadside Assistance",
-      desc: "Round-the-clock support ensuring you never get stuck."
+      title: t('home.features.roadside_assistance_title', '24/7 Roadside Assistance'),
+      desc: t('home.features.roadside_assistance_desc', 'Round-the-clock support ensuring you never get stuck.')
     },
     {
       imgSrc: "/IndiaPermit.jpg",
-      title: "All India Permit",
-      desc: "Travel anywhere across the country without border restrictions."
+      title: t('home.features.india_permit_title', 'All India Permit'),
+      desc: t('home.features.india_permit_desc', 'Travel anywhere across the country without border restrictions.')
     }
   ];
 
@@ -45,7 +45,9 @@ export default function FeaturesSection() {
 
       {/* 1. TRUSTED BY SECTION */}
       <div className="mb-20 border-b border-gray-100 pb-12">
-        <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Trusted by</p>
+        <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">
+          {t('home.features.trusted_by', 'Trusted by')}
+        </p>
         <div className="relative w-full overflow-hidden">
           <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
           <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
@@ -71,10 +73,10 @@ export default function FeaturesSection() {
         {/* 2. SECTION HEADER */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
-            Why Choose <span className="text-blue-600">FLEEMAN?</span>
+            {t('home.features.title_start', 'Why Choose')} <span className="text-blue-600">{t('home.features.title_highlight', 'FLEEMAN?')}</span>
           </h2>
           <p className="text-gray-600 text-lg">
-            Simple, transparent, and designed for your comfort.
+            {t('home.features.subtitle', 'Simple, transparent, and designed for your comfort.')}
           </p>
         </div>
 
