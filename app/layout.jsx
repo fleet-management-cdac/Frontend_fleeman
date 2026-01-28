@@ -1,6 +1,8 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
 import { I18nProvider } from '../context/I18nContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata = {
     title: 'FLEMAN - Fleet Management & Vehicle Rental',
@@ -17,6 +19,7 @@ export default function RootLayout({ children }) {
                 <AuthProvider>
                     <I18nProvider>
                         {children}
+                        <ToastContainer position="bottom-left" theme="colored" autoClose={3000} />
                     </I18nProvider>
                 </AuthProvider>
             </body>

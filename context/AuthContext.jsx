@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '../lib/utils';
 import { getUserDetails } from '../services/authService';
 
@@ -12,10 +13,23 @@ export function AuthProvider({ children }) {
     const [isClient, setIsClient] = useState(false);
     const [profileComplete, setProfileComplete] = useState(true); // Assume complete until checked
 
+    const router = useRouter();
+    const pathname = usePathname();
+
     useEffect(() => {
         setIsClient(true);
         checkAuth();
     }, []);
+
+    // Force redirect to complete-profile if profile is incomplete
+    useEffect(() => {
+        if (!loading && user && !profileComplete) {
+            // Allow logout or staying on the complete-profile page
+            if (pathname !== '/complete-profile' && pathname !== '/login') {
+                router.replace('/complete-profile');
+            }
+        }
+    }, [loading, user, profileComplete, pathname, router]);
 
     const checkAuth = useCallback(async () => {
         if (typeof window === 'undefined') return;
@@ -33,16 +47,22 @@ export function AuthProvider({ children }) {
 
             // Check if profile is complete for OAuth users
             try {
-                const response = await getUserDetails(decoded.userId);
-                if (response.success && response.data) {
-                    const details = response.data;
-                    // Profile is complete if phone number exists
-                    const isComplete = !!details.phoneCell;
-                    setProfileComplete(isComplete);
-                    localStorage.setItem('profileComplete', isComplete ? 'true' : 'false');
+                // If staff, we consider profile complete or irrelevant for this check
+                if (userData.role === 'staff') {
+                    setProfileComplete(true);
+                    localStorage.setItem('profileComplete', 'true');
                 } else {
-                    setProfileComplete(false);
-                    localStorage.setItem('profileComplete', 'false');
+                    const response = await getUserDetails(decoded.userId);
+                    if (response.success && response.data) {
+                        const details = response.data;
+                        // Profile is complete if phone number exists
+                        const isComplete = !!details.phoneCell;
+                        setProfileComplete(isComplete);
+                        localStorage.setItem('profileComplete', isComplete ? 'true' : 'false');
+                    } else {
+                        setProfileComplete(false);
+                        localStorage.setItem('profileComplete', 'false');
+                    }
                 }
             } catch (error) {
                 // If can't fetch details, assume incomplete for OAuth users
@@ -74,6 +94,12 @@ export function AuthProvider({ children }) {
 
         // Check profile completeness
         try {
+            if (userData.role === 'staff') {
+                setProfileComplete(true);
+                localStorage.setItem('profileComplete', 'true');
+                return true;
+            }
+
             const response = await getUserDetails(decoded.userId);
             if (response.success && response.data) {
                 const isComplete = !!response.data.phoneCell;

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useI18n } from '../../context/I18nContext';
 
-export default function LanguageSelector() {
+export default function LanguageSelector({ theme = 'light' }) {
     const { languages, currentLang, changeLang } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef(null);
@@ -22,15 +22,17 @@ export default function LanguageSelector() {
 
     if (languages.length <= 1) return null;
 
+    const textColor = theme === 'dark' ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100';
+
     return (
         <div ref={ref} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition ${textColor}`}
             >
                 <span className="text-base">🌐</span>
-                <span className="uppercase">{currentLang}</span>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="uppercase tracking-wide">{currentLang}</span>
+                <svg className="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
