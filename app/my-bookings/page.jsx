@@ -94,7 +94,7 @@ export default function MyBookingsPage() {
                     ) : (
                         <div className="space-y-4">
                             {filteredBookings.map((booking) => (
-                                <Card key={booking.id} className="p-6">
+                                <Card key={booking.bookingId || booking.id} className="p-6">
                                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-start gap-4">
@@ -103,7 +103,7 @@ export default function MyBookingsPage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold text-gray-900 text-lg">{booking.vehicleTypeName || booking.vehicleName || 'Vehicle'}</h3>
-                                                    <p className="text-gray-500 text-sm">Booking #{booking.id}</p>
+                                                    <p className="text-gray-500 text-sm">Booking #{booking.bookingId || booking.id}</p>
                                                     <div className="flex items-center gap-2 mt-2"><Badge status={booking.status}>{booking.status}</Badge></div>
                                                 </div>
                                             </div>
@@ -128,9 +128,9 @@ export default function MyBookingsPage() {
                                                 </div>
                                             )}
                                             <div className="flex gap-2">
-                                                <Link href={`/booking/${booking.id}`}><Button variant="outline" size="sm">View</Button></Link>
+                                                <Link href={`/booking/${booking.bookingId || booking.id}`}><Button variant="outline" size="sm">View</Button></Link>
                                                 {booking.status === 'reserved' && (
-                                                    <Button variant="danger" size="sm" onClick={() => handleCancel(booking.id)}>Cancel</Button>
+                                                    <Button variant="danger" size="sm" onClick={() => handleCancel(booking.bookingId || booking.id)}>Cancel</Button>
                                                 )}
                                             </div>
                                         </div>

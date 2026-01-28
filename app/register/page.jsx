@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { register as registerApi, googleLogin } from '../../services/authService';
 import { getAllStates, getCitiesByState } from '../../services/locationService';
+import { toast } from 'react-toastify';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
@@ -153,26 +154,37 @@ export default function RegisterPage() {
             const response = await registerApi(payload);
 
             if (response.success) {
-                router.push('/login?registered=true');
+                toast.success('Registration successful! Redirecting to login...', {
+                    onClose: () => router.push('/login?registered=true')
+                });
+                // Fallback redirect in case onClose doesn't trigger immediately or if user navigates away
+                setTimeout(() => {
+                    router.push('/login?registered=true');
+                }, 3000);
             } else {
-                setServerError(response.message || 'Registration failed');
+                const msg = response.message || 'Registration failed';
+                setServerError(msg);
+                toast.error(msg);
             }
         } catch (err) {
-            setServerError(err.response?.data?.message || 'Registration failed. Please try again.');
+            const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+            setServerError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 py-12">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 py-2">
             <div className="w-full max-w-lg">
-                <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                            <span className="text-white font-bold text-xl">F</span>
-                        </div>
-                        <span className="font-bold text-2xl text-gray-900">FLEMAN</span>
+                <div className="text-center mb-2 flex flex-col items-center">
+                    <Link href="/" className="inline-block transition-transform hover:scale-105">
+                        <img
+                            src="/brandlogo.png"
+                            alt="FLEEMAN"
+                            className="h-20 w-auto object-contain"
+                        />
                     </Link>
                 </div>
 

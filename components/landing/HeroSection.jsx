@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useI18n } from '../../context/I18nContext';
-import Card from '../ui/Card';
+import { toast } from 'react-toastify';
 import Button from '../ui/Button';
 import {
     getAllStates,
@@ -13,7 +13,7 @@ import {
     getAirportsByState,
 } from '../../services/locationService';
 
-// Searchable Airport Dropdown
+// Modern Searchable Airport Dropdown
 function SearchableAirportSelect({ airports, value, onChange, name, error, placeholder }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState("");
@@ -35,52 +35,70 @@ function SearchableAirportSelect({ airports, value, onChange, name, error, place
     }, []);
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative group">
             <button type="button" onClick={() => setIsOpen(!isOpen)}
-                className={`w-full px-3 py-2 text-left border rounded-lg bg-white flex justify-between items-center text-sm ${error ? "border-red-500" : "border-gray-300"}`}>
-                <span className={selectedAirport ? "text-gray-900" : "text-gray-400"}>
+                className={`w-full px-4 py-3 text-left border rounded-xl bg-gray-50 flex justify-between items-center text-sm font-medium transition-all shadow-sm hover:bg-white
+                ${error ? "border-red-400 ring-1 ring-red-400 bg-red-50" : "border-gray-200 focus:ring-2 focus:ring-gray-300"}`}>
+                <span className={selectedAirport ? "text-gray-900" : "text-gray-500"}>
                     {selectedAirport ? `${selectedAirport.airportName || selectedAirport.name} (${selectedAirport.airportCode || selectedAirport.code})` : placeholder}
                 </span>
-                <span className="text-gray-400">▼</span>
+                <span className="text-gray-400 text-xs">▼</span>
             </button>
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-hidden">
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Type to search..." className="w-full px-3 py-2 border-b border-gray-200 text-sm focus:outline-none" autoFocus />
-                    <div className="max-h-32 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-hidden">
+                    <div className="p-2 border-b border-gray-100">
+                        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Type to search..."
+                            className="w-full px-3 py-2 bg-gray-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200" autoFocus />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar">
                         {filteredAirports.length === 0 ? (
-                            <div className="px-3 py-2 text-gray-400 text-sm">No airports found</div>
+                            <div className="px-4 py-3 text-gray-500 text-sm text-center">No airports found</div>
                         ) : (
                             filteredAirports.map((airport) => (
                                 <button key={airport.airportId || airport.id} type="button"
                                     onClick={() => { onChange({ target: { name, value: airport.airportId || airport.id } }); setIsOpen(false); setSearch(""); }}
-                                    className="w-full px-3 py-2 text-left hover:bg-blue-50 text-sm">
-                                    {airport.airportName || airport.name} <span className="text-gray-400">({airport.airportCode || airport.code})</span>
+                                    className="w-full px-4 py-2.5 text-left hover:bg-gray-100 text-sm transition-colors flex items-center justify-between group/item">
+                                    <span className="text-gray-700 font-medium">{airport.airportName || airport.name}</span>
+                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md font-mono group-hover/item:bg-white border border-gray-200">
+                                        {airport.airportCode || airport.code}
+                                    </span>
                                 </button>
                             ))
                         )}
                     </div>
                 </div>
             )}
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+            {error && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{error}</p>}
         </div>
     );
 }
 
-// Select Box
+// Modern Select Box
 function SelectBox({ name, value, onChange, disabled, options, placeholder, error, idKey, nameKey }) {
     return (
-        <select name={name} value={value} onChange={onChange} disabled={disabled}
-            className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${error ? "border-red-500" : "border-gray-300"}`}>
-            <option value="">{placeholder}</option>
-            {options.map(o => <option key={o[idKey] || o.id} value={o[idKey] || o.id}>{o[nameKey] || o.name}</option>)}
-        </select>
+        <div className="relative">
+            <select name={name} value={value} onChange={onChange} disabled={disabled}
+                className={`w-full px-4 py-3 border rounded-xl text-sm font-medium bg-gray-50 shadow-sm appearance-none cursor-pointer hover:bg-white transition-all
+                disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none
+                focus:ring-2 focus:ring-gray-300 focus:outline-none
+                ${error ? "border-red-400 ring-1 ring-red-400 bg-red-50" : "border-gray-200"}`}>
+                <option value="">{placeholder}</option>
+                {options.map(o => <option key={o[idKey] || o.id} value={o[idKey] || o.id}>{o[nameKey] || o.name}</option>)}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
+                ▼
+            </div>
+            {error && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{error}</p>}
+        </div>
     );
 }
 
 export default function HeroSection() {
     const { t } = useI18n();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    // showLocationError state removed, using toast instead
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [hubs, setHubs] = useState([]);
@@ -96,6 +114,16 @@ export default function HeroSection() {
         returnStateId: "", returnCityId: "", returnType: "hub", returnHubId: "", returnAirportId: "",
         pickupDate: "", pickupTime: "10:00", returnDate: "", returnTime: "10:00",
     });
+
+    useEffect(() => {
+        const error = searchParams.get('error');
+        if (error === 'missing_location') {
+            toast.error("Please select both pickup and return locations.", {
+                toastId: 'missing_location' // Prevent duplicates
+            });
+            window.history.replaceState({}, '', '/');
+        }
+    }, [searchParams]);
 
     useEffect(() => { fetchStates(); fetchAllAirports(); }, []);
     useEffect(() => { if (formData.stateId) { fetchCities(formData.stateId); fetchPickupAirports(formData.stateId); } else { setPickupAirports(allAirports); } }, [formData.stateId, allAirports]);
@@ -138,7 +166,10 @@ export default function HeroSection() {
     };
 
     const handleSearch = () => {
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            toast.error("Please fill in all required fields.");
+            return;
+        }
         let pickupHubId = formData.pickupHubId;
         if (formData.pickupType === "airport") {
             const selectedAirport = pickupAirports.find(a => (a.airportId || a.id) == formData.pickupAirportId);
@@ -161,77 +192,111 @@ export default function HeroSection() {
     const minDate = tomorrow.toISOString().split("T")[0];
 
     return (
-        <section className="relative w-full bg-cover bg-center text-white min-h-[85vh] flex items-center" style={{ backgroundImage: "url('/banner.png')" }}>
-            <div className="max-w-7xl mx-auto px-4 w-full">
-                <div className="grid lg:grid-cols-2 gap-8 items-center">
-                    <div></div>
-                    <Card className="p-5 bg-white/95 backdrop-blur text-gray-900 shadow-xl">
-                        <h2 className="text-lg font-bold mb-4 text-gray-900">🚗 {t('home.hero.title', 'Find Your Ride')}</h2>
+        <section className="relative w-full min-h-screen flex items-center justify-center bg-gray-900 overflow-hidden">
 
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* PICKUP */}
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
-                                    <span className="text-sm font-semibold text-gray-700">{t('home.hero.pickup', 'Pickup')}</span>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "hub" } })}
-                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "hub" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 {t('home.hero.hub', 'Hub')}</button>
-                                    <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "airport" } })}
-                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.pickupType === "airport" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ {t('home.hero.airport', 'Airport')}</button>
-                                </div>
-                                {formData.pickupType === "hub" ? (
-                                    <>
-                                        <SelectBox name="stateId" value={formData.stateId} onChange={handleChange} options={states} placeholder={t('home.hero.state', 'State')} error={errors.stateId} idKey="stateId" nameKey="stateName" />
-                                        <SelectBox name="cityId" value={formData.cityId} onChange={handleChange} disabled={!formData.stateId} options={cities} placeholder={t('home.hero.city', 'City')} error={errors.cityId} idKey="cityId" nameKey="cityName" />
-                                        <SelectBox name="pickupHubId" value={formData.pickupHubId} onChange={handleChange} disabled={!formData.cityId} options={hubs} placeholder={t('home.hero.hub', 'Hub')} error={errors.pickupHubId} idKey="hubId" nameKey="hubName" />
-                                    </>
-                                ) : (
-                                    <SearchableAirportSelect airports={pickupAirports} value={formData.pickupAirportId} onChange={handleChange} name="pickupAirportId" error={errors.pickupAirportId} placeholder={t('home.hero.search_airport', 'Search airport...')} />
-                                )}
-                                <div className="flex gap-2">
-                                    <input type="date" name="pickupDate" value={formData.pickupDate} onChange={handleChange} min={minDate}
-                                        className={`flex-1 px-2 py-2 border rounded-lg text-sm ${errors.pickupDate ? "border-red-500" : "border-gray-300"}`} />
-                                    <input type="time" name="pickupTime" value={formData.pickupTime} onChange={handleChange}
-                                        className="w-24 px-2 py-2 border border-gray-300 rounded-lg text-sm" />
-                                </div>
-                            </div>
+            {/* Background Image with Modern Overlay */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-gray-900/40 z-10" />
+                <div
+                    className="w-full h-full bg-cover bg-center"
+                    style={{ backgroundImage: "url('/banner.jpg')" }}
+                />
+            </div>
 
-                            {/* RETURN */}
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">2</span>
-                                    <span className="text-sm font-semibold text-gray-700">{t('home.hero.return', 'Return')}</span>
+            <div className="relative z-20 max-w-7xl mx-auto px-4 w-full py-12 md:py-0">
+                <div className="grid lg:grid-cols-12 gap-12 items-center">
+
+                    {/* Hero Text */}
+                    <div className="lg:col-span-6 text-white space-y-6">
+                        <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+                            {t('home.hero.title_prefix', 'Find Your')} <span className="text-white">{t('home.hero.title_suffix', 'Perfect Drive')}</span>
+                        </h1>
+                        <p className="text-lg text-gray-200 leading-relaxed max-w-lg">
+                            {t('home.hero.subtitle', 'Experience the freedom of the road with our premium fleet. Flexible bookings, transparent pricing, and 24/7 support.')}
+                        </p>
+                    </div>
+
+                    {/* Search Card - Clean Solid Design */}
+                    <div className="lg:col-span-6 lg:col-start-7 text-left">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+                            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                                {t('home.hero.form_title', 'Book Your Journey')}
+                            </h2>
+
+                            <div className="space-y-6">
+                                {/* PICKUP SECTION */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-semibold text-gray-700">
+                                            {t('home.hero.pickup', 'Pickup Location')}
+                                        </label>
+
+                                        <div className="flex bg-gray-100 rounded-lg p-1">
+                                            <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "hub" } })}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.pickupType === "hub" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.hub', 'Hub')}</button>
+                                            <button type="button" onClick={() => handleChange({ target: { name: "pickupType", value: "airport" } })}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.pickupType === "airport" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.airport', 'Airport')}</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {formData.pickupType === "hub" ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <SelectBox name="stateId" value={formData.stateId} onChange={handleChange} options={states} placeholder={t('home.hero.state', 'State')} error={errors.stateId} idKey="stateId" nameKey="stateName" />
+                                                <SelectBox name="cityId" value={formData.cityId} onChange={handleChange} disabled={!formData.stateId} options={cities} placeholder={t('home.hero.city', 'City')} error={errors.cityId} idKey="cityId" nameKey="cityName" />
+                                                <SelectBox name="pickupHubId" value={formData.pickupHubId} onChange={handleChange} disabled={!formData.cityId} options={hubs} placeholder={t('home.hero.hub_select', 'Hub')} error={errors.pickupHubId} idKey="hubId" nameKey="hubName" />
+                                            </div>
+                                        ) : (
+                                            <SearchableAirportSelect airports={pickupAirports} value={formData.pickupAirportId} onChange={handleChange} name="pickupAirportId" error={errors.pickupAirportId} placeholder={t('home.hero.search_airport', 'Search airport name or code...')} />
+                                        )}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input type="date" name="pickupDate" value={formData.pickupDate} onChange={handleChange} min={minDate}
+                                                className={`w-full px-3 py-2.5 bg-gray-50 border rounded-lg text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-900 ${errors.pickupDate ? "border-red-400" : "border-gray-200"}`} />
+                                            <input type="time" name="pickupTime" value={formData.pickupTime} onChange={handleChange}
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-900" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "hub" } })}
-                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "hub" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>🏢 {t('home.hero.hub', 'Hub')}</button>
-                                    <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "airport" } })}
-                                        className={`flex-1 py-1.5 px-2 rounded text-xs font-medium ${formData.returnType === "airport" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"}`}>✈️ {t('home.hero.airport', 'Airport')}</button>
+
+                                {/* RETURN SECTION */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-semibold text-gray-700">
+                                            {t('home.hero.return', 'Return Location')}
+                                        </label>
+                                        <div className="flex bg-gray-100 rounded-lg p-1">
+                                            <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "hub" } })}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "hub" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.hub', 'Hub')}</button>
+                                            <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "airport" } })}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "airport" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.airport', 'Airport')}</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {formData.returnType === "hub" ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <SelectBox name="returnStateId" value={formData.returnStateId} onChange={handleChange} options={states} placeholder={t('home.hero.state', 'State')} error={errors.returnStateId} idKey="stateId" nameKey="stateName" />
+                                                <SelectBox name="returnCityId" value={formData.returnCityId} onChange={handleChange} disabled={!formData.returnStateId} options={returnCities} placeholder={t('home.hero.city', 'City')} error={errors.returnCityId} idKey="cityId" nameKey="cityName" />
+                                                <SelectBox name="returnHubId" value={formData.returnHubId} onChange={handleChange} disabled={!formData.returnCityId} options={returnHubs} placeholder={t('home.hero.hub_select', 'Hub')} error={errors.returnHubId} idKey="hubId" nameKey="hubName" />
+                                            </div>
+                                        ) : (
+                                            <SearchableAirportSelect airports={returnAirports} value={formData.returnAirportId} onChange={handleChange} name="returnAirportId" error={errors.returnAirportId} placeholder={t('home.hero.search_airport', 'Search airport name or code...')} />
+                                        )}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} min={formData.pickupDate || minDate}
+                                                className={`w-full px-3 py-2.5 bg-gray-50 border rounded-lg text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-900 ${errors.returnDate ? "border-red-400" : "border-gray-200"}`} />
+                                            <input type="time" name="returnTime" value={formData.returnTime} onChange={handleChange}
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-900" />
+                                        </div>
+                                    </div>
                                 </div>
-                                {formData.returnType === "hub" ? (
-                                    <>
-                                        <SelectBox name="returnStateId" value={formData.returnStateId} onChange={handleChange} options={states} placeholder={t('home.hero.state', 'State')} error={errors.returnStateId} idKey="stateId" nameKey="stateName" />
-                                        <SelectBox name="returnCityId" value={formData.returnCityId} onChange={handleChange} disabled={!formData.returnStateId} options={returnCities} placeholder={t('home.hero.city', 'City')} error={errors.returnCityId} idKey="cityId" nameKey="cityName" />
-                                        <SelectBox name="returnHubId" value={formData.returnHubId} onChange={handleChange} disabled={!formData.returnCityId} options={returnHubs} placeholder={t('home.hero.hub', 'Hub')} error={errors.returnHubId} idKey="hubId" nameKey="hubName" />
-                                    </>
-                                ) : (
-                                    <SearchableAirportSelect airports={returnAirports} value={formData.returnAirportId} onChange={handleChange} name="returnAirportId" error={errors.returnAirportId} placeholder={t('home.hero.search_airport', 'Search airport...')} />
-                                )}
-                                <div className="flex gap-2">
-                                    <input type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} min={formData.pickupDate || minDate}
-                                        className={`flex-1 px-2 py-2 border rounded-lg text-sm ${errors.returnDate ? "border-red-500" : "border-gray-300"}`} />
-                                    <input type="time" name="returnTime" value={formData.returnTime} onChange={handleChange}
-                                        className="w-24 px-2 py-2 border border-gray-300 rounded-lg text-sm" />
-                                </div>
+
+                                <Button onClick={handleSearch} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-transform transform hover:scale-[1.01]">
+                                    {t('home.hero.search_btn', 'Find Vehicles')}
+                                </Button>
                             </div>
                         </div>
-
-                        <Button onClick={handleSearch} className="w-full mt-4" size="lg">
-                            {t('home.hero.search_btn', 'Search Vehicles')}
-                        </Button>
-                    </Card>
+                    </div>
                 </div>
             </div>
         </section>

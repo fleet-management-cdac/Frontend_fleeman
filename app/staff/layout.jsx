@@ -15,10 +15,10 @@ export default function StaffLayout({ children }) {
         if (!loading) {
             if (!user) {
                 // Not logged in - redirect to staff login
-                router.replace('/staff/login');
+                router.replace('/login');
             } else if (user.role !== 'staff') {
                 // Logged in but not staff - redirect to customer dashboard
-                router.replace('/dashboard');
+                router.replace('/');
             } else {
                 // Staff user - allow access
                 setAuthorized(true);

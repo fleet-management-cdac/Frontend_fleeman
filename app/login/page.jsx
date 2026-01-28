@@ -34,7 +34,7 @@ export default function LoginPage() {
                 if (role === 'staff') {
                     router.push('/staff/dashboard');
                 } else {
-                    router.push('/dashboard');
+                    router.push('/');
                 }
             } else {
                 setError(response.message || 'Login failed');
@@ -53,12 +53,13 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="text-center mb-8">
-                    <Link href="/" className="inline-flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                            <span className="text-white font-bold text-xl">F</span>
-                        </div>
-                        <span className="font-bold text-2xl text-gray-900">FLEMAN</span>
+                <div className="text-center mb-8 flex flex-col items-center">
+                    <Link href="/" className="inline-block transition-transform hover:scale-105">
+                        <img
+                            src="/brandlogo.png"
+                            alt="FLEEMAN"
+                            className="h-20 w-auto object-contain"
+                        />
                     </Link>
                 </div>
 

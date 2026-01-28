@@ -1,85 +1,108 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-
-const menuItems = [
-    { name: 'Dashboard', href: '/staff/dashboard', icon: '📊' },
-];
 
 export default function StaffSidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { user, logout } = useAuth();
-    const [collapsed, setCollapsed] = useState(false);
 
     const handleLogout = () => {
         logout();
-        window.location.href = '/login';
+        router.push('/login');
     };
 
+    const menuItems = [
+        {
+            name: 'Dashboard',
+            href: '/staff/dashboard',
+            icon: (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+            )
+        },
+        {
+            name: 'Book a Car',
+            href: '/',
+            icon: (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+            )
+        },
+        {
+            name: 'Hubs',
+            href: '/staff/upload',
+            icon: (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            )
+        }
+    ];
+
     return (
-        <aside className={`bg-gray-900 text-white h-screen sticky top-0 flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
-            {/* Logo */}
-            <div className="p-4 border-b border-gray-800">
-                <Link href="/staff/dashboard" className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-lg">F</span>
-                    </div>
-                    {!collapsed && <span className="font-bold text-xl">FLEMAN</span>}
-                </Link>
+        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+            {/* Logo Area */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-center">
+                <div className="flex items-center justify-center">
+                    <img
+                        src="/brandlogo.png"
+                        alt="Fleeman Logo"
+                        className="h-20 w-auto object-contain"
+                    />
+                </div>
             </div>
 
-            {/* Menu */}
-            <nav className="flex-1 py-4">
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                 {menuItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                     return (
                         <Link
-                            key={item.name}
+                            key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-lg transition
-                ${isActive
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-sm ${isActive
+                                ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                         >
-                            <span className="text-xl flex-shrink-0">{item.icon}</span>
-                            {!collapsed && <span>{item.name}</span>}
+                            <span className={`text-lg ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                                {item.icon}
+                            </span>
+                            <span>{item.name}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* User Section */}
-            <div className="p-4 border-t border-gray-800">
-                <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-                    <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm">👤</span>
+            {/* Footer / User Info */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                <div className="flex items-center gap-3 mb-3 px-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200">
+                        {user?.email?.[0].toUpperCase() || 'S'}
                     </div>
-                    {!collapsed && (
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{user?.email}</p>
-                            <p className="text-xs text-gray-500">Staff</p>
-                        </div>
-                    )}
+                    <div className="overflow-hidden">
+                        <p className="text-xs font-medium text-gray-900 truncate" title={user?.email}>
+                            {user?.email || 'Staff Member'}
+                        </p>
+                        <p className="text-[10px] text-gray-500 truncate">Staff Account</p>
+                    </div>
                 </div>
                 <button
                     onClick={handleLogout}
-                    className={`mt-3 w-full text-left text-gray-400 hover:text-white text-sm py-2 px-3 rounded hover:bg-gray-800 transition ${collapsed ? 'text-center' : ''}`}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-100 rounded-lg hover:bg-red-50 hover:border-red-200 transition-colors"
                 >
-                    {collapsed ? '🚪' : 'Logout'}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
                 </button>
             </div>
-
-            {/* Collapse Toggle */}
-            <button
-                onClick={() => setCollapsed(!collapsed)}
-                className="absolute -right-3 top-20 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center text-gray-400 hover:text-white border border-gray-700"
-            >
-                {collapsed ? '→' : '←'}
-            </button>
         </aside>
     );
 }

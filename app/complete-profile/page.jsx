@@ -47,7 +47,7 @@ export default function CompleteProfilePage() {
     // Redirect if already complete
     useEffect(() => {
         if (!authLoading && profileComplete) {
-            router.push('/dashboard');
+            router.push('/');
         }
     }, [authLoading, profileComplete, router]);
 
@@ -179,7 +179,7 @@ export default function CompleteProfilePage() {
 
             if (response.data.success) {
                 markProfileComplete();
-                router.push('/dashboard');
+                router.push('/');
             } else {
                 setServerError(response.data.message || 'Failed to update profile');
             }

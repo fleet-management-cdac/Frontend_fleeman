@@ -39,7 +39,7 @@ function LoginSuccessHandler() {
                         } else if (decoded.role === 'staff') {
                             router.replace('/staff/dashboard');
                         } else {
-                            router.replace('/dashboard');
+                            router.replace('/');
                         }
                     }, 100);
                 } catch {
@@ -47,7 +47,7 @@ function LoginSuccessHandler() {
                         if (!isProfileComplete) {
                             router.replace('/complete-profile');
                         } else {
-                            router.replace('/dashboard');
+                            router.replace('/');
                         }
                     }, 100);
                 }
