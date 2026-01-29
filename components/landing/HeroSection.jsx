@@ -218,8 +218,8 @@ export default function HeroSection() {
 
                     {/* Search Card - Clean Solid Design */}
                     <div className="lg:col-span-6 lg:col-start-7 text-left">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
-                            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                        <div className=" bg-white/10 backdrop-blur-xl  rounded-2xl shadow-2xl p-6 md:p-8">
+                            <h2 className="text-2xl font-bold mb-6 text-white">
                                 {t('home.hero.form_title', 'Book Your Journey')}
                             </h2>
 
@@ -227,7 +227,7 @@ export default function HeroSection() {
                                 {/* PICKUP SECTION */}
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-semibold text-gray-700">
+                                        <label className="text-lg font-semibold text-white">
                                             {t('home.hero.pickup', 'Pickup Location')}
                                         </label>
 
@@ -261,14 +261,14 @@ export default function HeroSection() {
                                 {/* RETURN SECTION */}
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-semibold text-gray-700">
+                                        <label className="text-lg font-semibold text-white">
                                             {t('home.hero.return', 'Return Location')}
                                         </label>
                                         <div className="flex bg-gray-100 rounded-lg p-1">
                                             <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "hub" } })}
-                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "hub" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.hub', 'Hub')}</button>
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "hub" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.hub', 'Hub')}</button>
                                             <button type="button" onClick={() => handleChange({ target: { name: "returnType", value: "airport" } })}
-                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "airport" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.airport', 'Airport')}</button>
+                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${formData.returnType === "airport" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{t('home.hero.airport', 'Airport')}</button>
                                         </div>
                                     </div>
 
@@ -291,7 +291,7 @@ export default function HeroSection() {
                                     </div>
                                 </div>
 
-                                <Button onClick={handleSearch} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition-transform transform hover:scale-[1.01]">
+                                <Button onClick={handleSearch} className="w-full bg-amber-500 text-white font-bold py-4 rounded-xl shadow-lg transition-transform transform hover:scale-[1.01]">
                                     {t('home.hero.search_btn', 'Find Vehicles')}
                                 </Button>
                             </div>
