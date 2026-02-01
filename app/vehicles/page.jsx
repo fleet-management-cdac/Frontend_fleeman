@@ -121,9 +121,6 @@ function VehiclesList() {
 
                                 {/* Image Section (Left) */}
                                 <div className="w-full md:w-1/3 lg:w-1/4 bg-gray-50 relative p-6 flex items-center justify-center">
-                                    <div className="absolute top-4 left-4 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
-                                        Available
-                                    </div>
                                     <div className="h-40 w-full flex items-center justify-center">
                                         {item.imgUrl ? (
                                             <img

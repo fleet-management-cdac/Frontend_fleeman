@@ -81,7 +81,11 @@ export default function HandoverPage() {
             if (vehicleTypeId) params.push(`vehicleTypeId=${vehicleTypeId}`);
             if (params.length > 0) url += '?' + params.join('&');
 
-            const response = await fetch(url, { credentials: 'omit' });
+            const token = localStorage.getItem('token');
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'omit'
+            });
             const vehicles = await response.json();
             setAvailableVehicles(Array.isArray(vehicles) ? vehicles : []);
         } catch (error) {
@@ -127,9 +131,13 @@ export default function HandoverPage() {
             const bookingId = selectedBooking.bookingId || selectedBooking.id;
 
             // Single API call - assigns vehicle + creates handover + updates booking status
+            const token = localStorage.getItem('token');
             const handoverResponse = await fetch(`${API_BASE_URL}/api/handovers`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 credentials: 'omit',
                 body: JSON.stringify({
                     bookingId: bookingId,

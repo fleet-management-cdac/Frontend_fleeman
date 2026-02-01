@@ -43,7 +43,7 @@ export default function OfferBanner() {
                 <div className="text-sm font-medium flex-1">
                     Get <span className="font-bold text-yellow-300 text-lg">{offer.discountPercentage.toFixed(0)}% OFF</span> on your next booking!
                     <span className="opacity-90 ml-2 hidden sm:inline">
-                        Valid: {new Date(offer.startDate).toLocaleDateString()} - {new Date(offer.endDate).toLocaleDateString()}
+                        Valid: {new Date(offer.startDate).toLocaleDateString('en-GB').replace(/\//g, '-')} - {new Date(offer.endDate).toLocaleDateString('en-GB').replace(/\//g, '-')}
                     </span>
                 </div>
 

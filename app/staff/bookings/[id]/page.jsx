@@ -53,12 +53,15 @@ export default function BookingDetailPage() {
     useEffect(() => {
         if (bookingId) {
             fetchBookingDetails();
+            fetchInvoiceForBooking();
         }
     }, [bookingId]);
 
     const fetchBookingDetails = async () => {
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
                 credentials: 'omit'
             });
             const data = await response.json();
@@ -75,6 +78,32 @@ export default function BookingDetailPage() {
         }
     };
 
+    const fetchInvoiceForBooking = async () => {
+        if (!bookingId) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE_URL}/api/invoices/booking/${bookingId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'omit'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    setInvoice(data.data);
+
+                    // Check if payment is already successful
+                    if (data.data.paymentStatus === 'success') {
+                        setPaymentSuccess(true);
+                        setTransactionId(data.data.razorpayPaymentId);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching invoice:', err);
+        }
+    };
     const fetchAvailableVehicles = async () => {
         if (!booking) return;
 
@@ -125,7 +154,11 @@ export default function BookingDetailPage() {
             const url = `${API_BASE_URL}/api/vehicles/available?${params.toString()}`;
             console.log('Fetching from:', url);
 
-            const response = await fetch(url, { credentials: 'omit' });
+            const token = localStorage.getItem('token');
+            const response = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'omit'
+            });
             const vehicles = await response.json();
 
             console.log('Available vehicles:', vehicles);
@@ -153,9 +186,13 @@ export default function BookingDetailPage() {
         setMessage({ type: '', text: '' });
 
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE_URL}/api/handovers`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 credentials: 'omit',
                 body: JSON.stringify({
                     bookingId: parseInt(bookingId),
@@ -194,9 +231,13 @@ export default function BookingDetailPage() {
         setMessage({ type: '', text: '' });
 
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE_URL}/api/invoices/return`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 credentials: 'omit',
                 body: JSON.stringify({
                     bookingId: parseInt(bookingId),
@@ -228,9 +269,13 @@ export default function BookingDetailPage() {
 
         try {
             // Step 1: Create Razorpay order
+            const token = localStorage.getItem('token');
             const orderResponse = await fetch(`${API_BASE_URL}/api/payments/create-order`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 credentials: 'omit',
                 body: JSON.stringify({ invoiceId: invoice.invoiceId })
             });
@@ -256,9 +301,13 @@ export default function BookingDetailPage() {
                 handler: async function (response) {
                     // Step 3: Verify payment
                     try {
+                        const token = localStorage.getItem('token');
                         const verifyResponse = await fetch(`${API_BASE_URL}/api/payments/verify`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
                             credentials: 'omit',
                             body: JSON.stringify({
                                 invoiceId: invoice.invoiceId,
@@ -383,8 +432,8 @@ export default function BookingDetailPage() {
                 </div>
             )}
 
-            {/* Return Vehicle - For Active bookings */}
-            {step === 1 && booking?.status === 'active' && !invoice && (
+            {/* Return Vehicle - For Active OR Returned bookings */}
+            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && (
                 <ReturnSection
                     returnDate={returnDate}
                     setReturnDate={setReturnDate}
@@ -397,7 +446,7 @@ export default function BookingDetailPage() {
             {invoice && (
                 <InvoiceSection
                     invoice={invoice}
-                    paymentSuccess={paymentSuccess}
+                    paymentSuccess={paymentSuccess || booking?.status === 'completed'}
                     transactionId={transactionId}
                     handlePayment={handlePayment}
                     processing={processing}

@@ -41,7 +41,9 @@ export const getBookingsByUser = async (userId) => {
 
 // Get all bookings (staff)
 export const getAllBookings = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         credentials: 'omit',
     });
     const data = await response.json();
