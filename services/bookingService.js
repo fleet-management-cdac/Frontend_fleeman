@@ -53,6 +53,20 @@ export const getAllBookings = async () => {
     return data;
 };
 
+// Get bookings by hub ID (staff dashboard - hub-specific)
+export const getBookingsByHub = async (hubId) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const response = await fetch(`${API_BASE_URL}/api/bookings/hub/${hubId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        credentials: 'omit',
+    });
+    const data = await response.json();
+    if (Array.isArray(data)) {
+        return { success: true, data };
+    }
+    return data;
+};
+
 // Update booking status (PATCH with query param)
 export const updateBookingStatus = async (bookingId, status) => {
     const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/status?status=${status}`, {

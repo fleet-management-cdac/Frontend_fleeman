@@ -48,6 +48,11 @@ export default function Navbar() {
                                         Dashboard
                                     </Link>
                                 )}
+                                {user?.role === 'admin' && (
+                                    <Link href="/admin/staff" className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
+                                        🛡️ Admin Panel
+                                    </Link>
+                                )}
                                 <Link href="/my-bookings" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                                     My Bookings
                                 </Link>
@@ -122,6 +127,11 @@ export default function Navbar() {
                                     {user?.role === 'staff' && (
                                         <Link href="/staff/dashboard" className="text-blue-700 bg-blue-50 py-3 px-4 rounded-xl transition-all font-bold flex items-center gap-3 border border-blue-100 mb-2">
                                             <span>📊</span> Staff Dashboard
+                                        </Link>
+                                    )}
+                                    {user?.role === 'admin' && (
+                                        <Link href="/admin/staff" className="text-purple-700 bg-purple-50 py-3 px-4 rounded-xl transition-all font-bold flex items-center gap-3 border border-purple-100 mb-2">
+                                            <span>🛡️</span> Admin Panel
                                         </Link>
                                     )}
                                     <Link href="/my-bookings" className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 py-3 px-4 rounded-xl transition-all font-medium">

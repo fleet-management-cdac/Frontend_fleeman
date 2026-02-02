@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAllBookings } from '../../../services/bookingService';
+import { getAllBookings, getBookingsByHub } from '../../../services/bookingService';
+import { processReturnHandover } from '../../../services/handoverService';
 import { useAuth } from '../../../context/AuthContext';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
@@ -27,9 +28,18 @@ export default function HandoverPage() {
     const [processing, setProcessing] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
+    // Tab state for Pickup vs Return
+    const [activeTab, setActiveTab] = useState('pickup');
+    const [returnBookings, setReturnBookings] = useState([]);
+    const [selectedReturnBooking, setSelectedReturnBooking] = useState(null);
+    const [returnFuelStatus, setReturnFuelStatus] = useState('full');
+    const [processingReturn, setProcessingReturn] = useState(false);
+
     useEffect(() => {
-        fetchBookings();
-    }, []);
+        if (user) {
+            fetchBookings();
+        }
+    }, [user]);
 
     useEffect(() => {
         filterBookings();
@@ -37,11 +47,22 @@ export default function HandoverPage() {
 
     const fetchBookings = async () => {
         try {
-            const response = await getAllBookings();
+            let response;
+            // Use hub-filtered bookings if staff has assigned hub
+            if (user?.hubId) {
+                response = await getBookingsByHub(user.hubId);
+            } else {
+                response = await getAllBookings();
+            }
+
             if (response.success) {
-                const reservedBookings = (response.data || []).filter(b => b.status === 'reserved');
+                const allBookings = response.data || [];
+                // Filter for pickup (reserved) and return (active) bookings
+                const reservedBookings = allBookings.filter(b => b.status === 'reserved');
+                const activeBookings = allBookings.filter(b => b.status === 'active');
                 setBookings(reservedBookings);
                 setFilteredBookings(reservedBookings);
+                setReturnBookings(activeBookings);
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -178,6 +199,49 @@ export default function HandoverPage() {
         });
     };
 
+    // Handle Return Handover
+    const handleReturnHandover = async () => {
+        if (!selectedReturnBooking) return;
+
+        setProcessingReturn(true);
+        setMessage({ type: '', text: '' });
+
+        try {
+            const staffId = user?.id;
+            if (!staffId) {
+                setMessage({ type: 'error', text: 'Staff ID not found. Please login again.' });
+                setProcessingReturn(false);
+                return;
+            }
+
+            const bookingId = selectedReturnBooking.bookingId || selectedReturnBooking.id;
+
+            const response = await processReturnHandover({
+                bookingId: bookingId,
+                processedBy: staffId,
+                fuelStatus: returnFuelStatus
+            });
+
+            if (response.success) {
+                setMessage({
+                    type: 'success',
+                    text: response.message || `✅ Return processed! Vehicle is now available at the return hub.`
+                });
+
+                // Remove from active bookings list
+                setReturnBookings(prev => prev.filter(b => (b.bookingId || b.id) !== bookingId));
+                setSelectedReturnBooking(null);
+            } else {
+                setMessage({ type: 'error', text: response.message || 'Return processing failed' });
+            }
+        } catch (error) {
+            console.error('Return handover error:', error);
+            setMessage({ type: 'error', text: 'Failed to process return handover' });
+        } finally {
+            setProcessingReturn(false);
+        }
+    };
+
     const filteredVehicles = availableVehicles.filter(v => {
         if (!vehicleSearch.trim()) return true;
         const query = vehicleSearch.toLowerCase();
@@ -194,13 +258,26 @@ export default function HandoverPage() {
 
     return (
         <div className="p-6">
-            {/* Header */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">🔑 Vehicle Handover</h1>
-                <p className="text-gray-500">Select booking → Assign vehicle → Complete handover</p>
+                <p className="text-gray-500">Process pickups and returns{user?.hubId ? ' for your hub' : ''}</p>
             </div>
 
-            {/* Progress Steps */}
+            {/* Tab Switcher */}
+            <div className="mb-6 flex gap-2">
+                <button
+                    onClick={() => { setActiveTab('pickup'); setStep(1); setSelectedReturnBooking(null); }}
+                    className={`px-6 py-3 rounded-lg font-medium transition ${activeTab === 'pickup' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                    🚗 Pickup Handover ({bookings.length})
+                </button>
+                <button
+                    onClick={() => { setActiveTab('return'); setStep(1); setSelectedBooking(null); setSelectedVehicle(null); }}
+                    className={`px-6 py-3 rounded-lg font-medium transition ${activeTab === 'return' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                    🔙 Return Handover ({returnBookings.length})
+                </button>
+            </div>
             <div className="flex items-center justify-center mb-6">
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${step >= 1 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
                     <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm">1</span>
@@ -225,8 +302,94 @@ export default function HandoverPage() {
                 </div>
             )}
 
+            {/* ============== RETURN TAB ============== */}
+            {activeTab === 'return' && (
+                <div className="grid lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <div className="p-4 border-b border-gray-100">
+                                <h2 className="text-lg font-semibold text-gray-900">🔙 Process Vehicle Return</h2>
+                                <p className="text-sm text-gray-500">Select an active booking to process return</p>
+                            </div>
+                            <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                                {returnBookings.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-500">No active bookings awaiting return</div>
+                                ) : (
+                                    returnBookings.map((booking) => (
+                                        <div
+                                            key={booking.bookingId || booking.id}
+                                            onClick={() => setSelectedReturnBooking(booking)}
+                                            className={`p-4 cursor-pointer hover:bg-green-50 transition ${selectedReturnBooking?.id === booking.id || selectedReturnBooking?.bookingId === booking.bookingId ? 'bg-green-100 border-l-4 border-green-500' : ''}`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">
+                                                        #{booking.bookingId || booking.id} - {booking.firstName || booking.customerName} {booking.lastName || ''}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">{booking.email}</p>
+                                                    <p className="text-sm text-gray-600 mt-1">📍 Return to: <strong>{booking.returnHub}</strong></p>
+                                                </div>
+                                                <Badge status={booking.status}>{booking.status}</Badge>
+                                            </div>
+                                            <div className="mt-2 text-xs text-gray-500">
+                                                🚗 {booking.vehicleTypeName} | Due: {formatDate(booking.returnDatetime)}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Return Confirmation Panel */}
+                    <div>
+                        {selectedReturnBooking ? (
+                            <Card className="p-4">
+                                <h3 className="font-semibold text-gray-900 mb-4">Confirm Return</h3>
+                                <div className="space-y-3 text-sm mb-4">
+                                    <p><strong>Booking:</strong> #{selectedReturnBooking.bookingId || selectedReturnBooking.id}</p>
+                                    <p><strong>Customer:</strong> {selectedReturnBooking.firstName || selectedReturnBooking.customerName} {selectedReturnBooking.lastName || ''}</p>
+                                    <p><strong>Return Hub:</strong> {selectedReturnBooking.returnHub}</p>
+                                    <p><strong>Vehicle Type:</strong> {selectedReturnBooking.vehicleTypeName}</p>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Fuel Status at Return</label>
+                                    <select
+                                        value={returnFuelStatus}
+                                        onChange={(e) => setReturnFuelStatus(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                    >
+                                        <option value="full">Full Tank</option>
+                                        <option value="3/4">3/4 Tank</option>
+                                        <option value="1/2">Half Tank</option>
+                                        <option value="1/4">1/4 Tank</option>
+                                        <option value="empty">Empty</option>
+                                    </select>
+                                </div>
+                                <Button
+                                    onClick={handleReturnHandover}
+                                    disabled={processingReturn}
+                                    className="w-full bg-green-600 hover:bg-green-700"
+                                    size="lg"
+                                >
+                                    {processingReturn ? 'Processing...' : '✅ Complete Return'}
+                                </Button>
+                                <p className="mt-3 text-xs text-gray-500 text-center">
+                                    Vehicle will be marked available at <strong>{selectedReturnBooking.returnHub}</strong>
+                                </p>
+                            </Card>
+                        ) : (
+                            <Card className="p-6 bg-gray-50 text-center">
+                                <p className="text-gray-500">Select a booking to process return</p>
+                            </Card>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ============== PICKUP TAB ============== */}
             {/* STEP 1: Select Booking */}
-            {step === 1 && (
+            {activeTab === 'pickup' && step === 1 && (
                 <Card>
                     <div className="p-4 border-b border-gray-100">
                         <h2 className="text-lg font-semibold text-gray-900">Step 1: Select Booking</h2>
@@ -270,7 +433,7 @@ export default function HandoverPage() {
             )}
 
             {/* STEP 2: Select Vehicle */}
-            {step === 2 && selectedBooking && (
+            {activeTab === 'pickup' && step === 2 && selectedBooking && (
                 <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2">
                         <Card>
@@ -331,7 +494,7 @@ export default function HandoverPage() {
             )}
 
             {/* STEP 3: Complete Handover */}
-            {step === 3 && selectedBooking && selectedVehicle && (
+            {activeTab === 'pickup' && step === 3 && selectedBooking && selectedVehicle && (
                 <div className="grid lg:grid-cols-2 gap-6">
                     <Card className="p-6">
                         <div className="flex items-center justify-between mb-4">

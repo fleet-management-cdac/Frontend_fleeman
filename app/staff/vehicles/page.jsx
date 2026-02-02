@@ -35,7 +35,11 @@ export default function StaffVehiclesPage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
 
-    // Filters
+    // Check if user is admin (can see all hubs)
+    const isAdmin = user?.role === 'admin';
+    const staffHubId = user?.hubId;
+
+    // Filters (only for admin)
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [hubs, setHubs] = useState([]);
@@ -49,65 +53,13 @@ export default function StaffVehiclesPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // Initial Load - States
-    useEffect(() => {
-        const fetchStates = async () => {
-            try {
-                const res = await getAllStates();
-                setStates(Array.isArray(res) ? res : (res.data || []));
-            } catch (err) {
-                console.error("Failed to load states", err);
-            }
-        };
-        fetchStates();
-    }, []);
-
-    // Load Cities when State changes
-    useEffect(() => {
-        if (selectedState) {
-            const fetchCities = async () => {
-                try {
-                    const res = await getCitiesByState(selectedState);
-                    setCities(Array.isArray(res) ? res : (res.data || []));
-                    setSelectedCity('');
-                    setHubs([]);
-                    setSelectedHub('');
-                } catch (err) {
-                    console.error("Failed to load cities", err);
-                }
-            };
-            fetchCities();
-        } else {
-            setCities([]);
-            setHubs([]);
-        }
-    }, [selectedState]);
-
-    // Load Hubs when City changes
-    useEffect(() => {
-        if (selectedCity) {
-            const fetchHubs = async () => {
-                try {
-                    const res = await getHubsByCity(selectedCity);
-                    setHubs(Array.isArray(res) ? res : (res.data || []));
-                    setSelectedHub('');
-                } catch (err) {
-                    console.error("Failed to load hubs", err);
-                }
-            };
-            fetchHubs();
-        } else {
-            setHubs([]);
-        }
-    }, [selectedCity]);
-
     // Fetch Inventory Logic
     const fetchInventory = async (hubId = null) => {
         setLoading(true);
         setError('');
         try {
             // If hubId is provided, fetch specific hub inventory
-            // Otherwise fetch all inventory
+            // Otherwise fetch all inventory (admin only)
             const url = hubId
                 ? `http://localhost:8080/api/inventory/hub/${hubId}`
                 : `http://localhost:8080/api/inventory/all`;
@@ -132,23 +84,33 @@ export default function StaffVehiclesPage() {
         }
     };
 
-    // Initial Load - Fetch All Inventory & States
+    // Initial Load - different behavior for admin vs staff
     useEffect(() => {
-        fetchInventory(); // Fetch all initially
+        if (authLoading) return;
 
-        const fetchStates = async () => {
-            try {
-                const res = await getAllStates();
-                setStates(Array.isArray(res) ? res : (res.data || []));
-            } catch (err) {
-                console.error("Failed to load states", err);
-            }
-        };
-        fetchStates();
-    }, []);
+        if (isAdmin) {
+            // Admin: fetch all inventory initially
+            fetchInventory();
+            // Load states for filters
+            const loadStates = async () => {
+                try {
+                    const res = await getAllStates();
+                    setStates(Array.isArray(res) ? res : (res.data || []));
+                } catch (err) {
+                    console.error("Failed to load states", err);
+                }
+            };
+            loadStates();
+        } else if (staffHubId) {
+            // Staff with hub: fetch only their hub's inventory
+            fetchInventory(staffHubId);
+        }
+        // Staff without hub: show nothing (handled in UI)
+    }, [authLoading, isAdmin, staffHubId]);
 
-    // Load Cities when State changes
+    // Load Cities when State changes (admin only)
     useEffect(() => {
+        if (!isAdmin) return;
         if (selectedState) {
             const fetchCities = async () => {
                 try {
@@ -166,10 +128,11 @@ export default function StaffVehiclesPage() {
             setCities([]);
             setHubs([]);
         }
-    }, [selectedState]);
+    }, [selectedState, isAdmin]);
 
-    // Load Hubs when City changes
+    // Load Hubs when City changes (admin only)
     useEffect(() => {
+        if (!isAdmin) return;
         if (selectedCity) {
             const fetchHubs = async () => {
                 try {
@@ -184,22 +147,17 @@ export default function StaffVehiclesPage() {
         } else {
             setHubs([]);
         }
-    }, [selectedCity]);
+    }, [selectedCity, isAdmin]);
 
-    // Fetch Inventory when Hub changes
+    // Fetch Inventory when Hub changes (admin only)
     useEffect(() => {
-        // If specific hub selected, fetch for that hub
+        if (!isAdmin) return;
         if (selectedHub) {
             fetchInventory(selectedHub);
-        }
-        // If hub deselected (but filters exist), we could fetch for city/state if API supported it
-        // For now, if hub is cleared, user might want to see all or nothing. 
-        // Based on "before selecting hub show all", if they reset, maybe show all again?
-        // Let's assume if they clear the hub selection manually or via parent change, we revert to all.
-        else if (!selectedHub && !selectedCity && !selectedState) {
+        } else if (!selectedHub && !selectedCity && !selectedState) {
             fetchInventory(); // Back to all
         }
-    }, [selectedHub, selectedCity, selectedState]);
+    }, [selectedHub, selectedCity, selectedState, isAdmin]);
 
 
     const getStatusColor = (status) => {
@@ -212,6 +170,29 @@ export default function StaffVehiclesPage() {
     };
 
     if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Spinner /></div>;
+
+    // Staff without hub assigned
+    if (!isAdmin && !staffHubId) {
+        return (
+            <>
+                <div className="min-h-screen bg-gray-50 pb-12">
+                    <Navbar />
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Card className="p-8 text-center">
+                            <span className="text-4xl block mb-4">⚠️</span>
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">No Hub Assigned</h2>
+                            <p className="text-gray-500 mb-4">
+                                You are not assigned to any hub. Please contact an administrator to assign you to a hub.
+                            </p>
+                            <Button onClick={() => router.push('/staff/dashboard')}>
+                                Back to Dashboard
+                            </Button>
+                        </Card>
+                    </main>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
@@ -230,57 +211,65 @@ export default function StaffVehiclesPage() {
                         </Button>
                     </div>
 
-                    {/* Filters */}
-                    <Card className="p-6 mb-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Select Location</h2>
-                            {(selectedState || selectedCity || selectedHub) && (
-                                <button
-                                    onClick={() => {
-                                        setSelectedState('');
-                                        setSelectedCity('');
-                                        setSelectedHub('');
-                                        setVehicles([]); // Clear first
-                                        fetchInventory(); // Fetch all
-                                    }}
-                                    className="text-sm text-red-600 hover:text-red-800 font-medium"
-                                >
-                                    Clear Filters
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <SelectBox
-                                name="state"
-                                value={selectedState}
-                                onChange={(e) => setSelectedState(e.target.value)}
-                                options={states}
-                                placeholder="Select State"
-                                idKey="stateId"
-                                nameKey="stateName"
-                            />
-                            <SelectBox
-                                name="city"
-                                value={selectedCity}
-                                onChange={(e) => setSelectedCity(e.target.value)}
-                                disabled={!selectedState}
-                                options={cities}
-                                placeholder="Select City"
-                                idKey="cityId"
-                                nameKey="cityName"
-                            />
-                            <SelectBox
-                                name="hub"
-                                value={selectedHub}
-                                onChange={(e) => setSelectedHub(e.target.value)}
-                                disabled={!selectedCity}
-                                options={hubs}
-                                placeholder="Select Hub"
-                                idKey="hubId"
-                                nameKey="hubName"
-                            />
-                        </div>
-                    </Card>
+                    {/* Filters - Admin Only */}
+                    {isAdmin ? (
+                        <Card className="p-6 mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Select Location</h2>
+                                {(selectedState || selectedCity || selectedHub) && (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedState('');
+                                            setSelectedCity('');
+                                            setSelectedHub('');
+                                            setVehicles([]); // Clear first
+                                            fetchInventory(); // Fetch all
+                                        }}
+                                        className="text-sm text-red-600 hover:text-red-800 font-medium"
+                                    >
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <SelectBox
+                                    name="state"
+                                    value={selectedState}
+                                    onChange={(e) => setSelectedState(e.target.value)}
+                                    options={states}
+                                    placeholder="Select State"
+                                    idKey="stateId"
+                                    nameKey="stateName"
+                                />
+                                <SelectBox
+                                    name="city"
+                                    value={selectedCity}
+                                    onChange={(e) => setSelectedCity(e.target.value)}
+                                    disabled={!selectedState}
+                                    options={cities}
+                                    placeholder="Select City"
+                                    idKey="cityId"
+                                    nameKey="cityName"
+                                />
+                                <SelectBox
+                                    name="hub"
+                                    value={selectedHub}
+                                    onChange={(e) => setSelectedHub(e.target.value)}
+                                    disabled={!selectedCity}
+                                    options={hubs}
+                                    placeholder="Select Hub"
+                                    idKey="hubId"
+                                    nameKey="hubName"
+                                />
+                            </div>
+                        </Card>
+                    ) : (
+                        <Card className="p-4 mb-8 bg-blue-50 border-blue-200">
+                            <p className="text-blue-800 font-medium">
+                                📍 Showing vehicles for your assigned hub only
+                            </p>
+                        </Card>
+                    )}
 
                     {/* Content */}
                     {loading ? (
