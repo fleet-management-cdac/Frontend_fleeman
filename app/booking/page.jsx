@@ -40,7 +40,7 @@ function BookingForm() {
     const [states, setStates] = useState([]);
     const [cities, setCities] = useState([]);
     const [bookingResult, setBookingResult] = useState(null);
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
 
     // Addons state
     const [addons, setAddons] = useState([]);
@@ -137,7 +137,11 @@ function BookingForm() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        setError('');
+
+        // Clear specific error when user types
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
 
         if (name === 'stateId') {
             setFormData(prev => ({ ...prev, cityId: '' }));
@@ -146,29 +150,58 @@ function BookingForm() {
     };
 
     const validateForm = () => {
-        if (!formData.firstName) return 'First name is required';
-        if (!formData.email) return 'Email is required';
-        if (!formData.phoneCell) return 'Mobile number is required';
-        if (!formData.drivingLicenseNo) return 'Driving license number is required';
-        if (!formData.licenseValidTill) return 'License validity date is required';
-        return null;
+        const newErrors = {};
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const mobileRegex = /^\d{10}$/;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (!formData.firstName) {
+            newErrors.firstName = 'First name is required';
+        } else if (!/^[a-zA-Z\s]*$/.test(formData.firstName)) {
+            newErrors.firstName = 'First name should only contain letters';
+        }
+
+        if (!formData.email) {
+            newErrors.email = 'Email is required';
+        } else if (!emailRegex.test(formData.email)) {
+            newErrors.email = 'Invalid email format';
+        }
+
+        if (!formData.phoneCell) {
+            newErrors.phoneCell = 'Mobile number is required';
+        } else if (!mobileRegex.test(formData.phoneCell)) {
+            newErrors.phoneCell = 'Mobile number must be 10 digits';
+        }
+
+        if (formData.zipcode && !/^\d{5,6}$/.test(formData.zipcode)) {
+            newErrors.zipcode = 'Invalid zipcode';
+        }
+
+        if (!formData.drivingLicenseNo) newErrors.drivingLicenseNo = 'Driving license number is required';
+
+        if (!formData.licenseValidTill) {
+            newErrors.licenseValidTill = 'License validity date is required';
+        } else if (new Date(formData.licenseValidTill) <= today) {
+            newErrors.licenseValidTill = 'License must be valid (future date)';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async () => {
-        const validationError = validateForm();
-        if (validationError) {
-            toast.error(validationError);
+        if (!validateForm()) {
             return;
         }
 
         setLoading(true);
-        setError('');
 
         try {
             const formatDatetime = (dateStr) => {
                 if (!dateStr) return null;
                 if (dateStr.endsWith('Z') || dateStr.includes('+')) return dateStr;
-                return dateStr.includes(':00:00') ? dateStr + 'Z' : dateStr + ':00Z';
+                return new Date(dateStr).toISOString();
             };
 
             const bookingPayload = {
@@ -201,12 +234,10 @@ function BookingForm() {
                 toast.success('Booking confirmed successfully!');
             } else {
                 toast.error(response.message || 'Booking failed');
-                setError(response.message || 'Booking failed');
             }
         } catch (err) {
             const msg = err.message || 'Booking failed. Please try again.';
             toast.error(msg);
-            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -440,9 +471,10 @@ function BookingForm() {
                             {user ? 'Review and update your details' : 'Fill in your details to complete booking'}
                         </p>
 
-                        {error && (
+                        {/* General Error Message if any */}
+                        {Object.values(errors).some(err => err) && (
                             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                                {error}
+                                Please correct the errors below to proceed.
                             </div>
                         )}
 
@@ -455,6 +487,7 @@ function BookingForm() {
                                     value={formData.firstName}
                                     onChange={handleChange}
                                     disabled={user?.role === 'customer'}
+                                    error={errors.firstName}
                                 />
                                 <Input
                                     label="Last Name"
@@ -470,6 +503,7 @@ function BookingForm() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     disabled={user?.role === 'customer'}
+                                    error={errors.email}
                                 />
                             </div>
 
@@ -483,6 +517,7 @@ function BookingForm() {
                                     onChange={handleChange}
                                     placeholder="9876543210"
                                     disabled={user?.role === 'customer'}
+                                    error={errors.phoneCell}
                                 />
                                 <div className="md:col-span-2">
                                     <Input
@@ -534,6 +569,7 @@ function BookingForm() {
                                     name="zipcode"
                                     value={formData.zipcode}
                                     onChange={handleChange}
+                                    error={errors.zipcode}
                                 />
                             </div>
 
@@ -548,6 +584,7 @@ function BookingForm() {
                                         onChange={handleChange}
                                         placeholder="MH01-2020-1234567"
                                         disabled={user?.role === 'customer'}
+                                        error={errors.drivingLicenseNo}
                                     />
                                     <Input
                                         label="Valid Till *"
@@ -556,6 +593,7 @@ function BookingForm() {
                                         value={formData.licenseValidTill}
                                         onChange={handleChange}
                                         disabled={user?.role === 'customer'}
+                                        error={errors.licenseValidTill}
                                     />
                                 </div>
                             </div>

@@ -112,7 +112,12 @@ export default function StaffVehiclesPage() {
                 ? `http://localhost:8080/api/inventory/hub/${hubId}`
                 : `http://localhost:8080/api/inventory/all`;
 
-            const res = await fetch(url);
+            const token = localStorage.getItem('token');
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (res.ok) {
                 const data = await res.json();
                 setVehicles(Array.isArray(data) ? data : []);

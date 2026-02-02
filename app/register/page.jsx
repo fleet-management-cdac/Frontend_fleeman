@@ -92,30 +92,95 @@ export default function RegisterPage() {
 
     const validateStep1 = () => {
         const newErrors = {};
-        if (!formData.email) newErrors.email = 'Email is required';
-        if (!formData.password) newErrors.password = 'Password is required';
-        if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Password: At least 8 chars, 1 letter, 1 number
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+        if (!formData.email) {
+            newErrors.email = 'Email is required';
+        } else if (!emailRegex.test(formData.email)) {
+            newErrors.email = 'Invalid email format';
+        }
+
+        if (!formData.password) {
+            newErrors.password = 'Password is required';
+        } else if (!passwordRegex.test(formData.password)) {
+            newErrors.password = 'Password must be at least 8 chars, include a letter and a number';
+        }
+
         if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-        if (!formData.firstName) newErrors.firstName = 'First name is required';
+
+        if (!formData.firstName) {
+            newErrors.firstName = 'First name is required';
+        } else if (!/^[a-zA-Z\s]*$/.test(formData.firstName)) {
+            newErrors.firstName = 'First name should only contain letters';
+        }
+
+        if (!formData.dateOfBirth) {
+            newErrors.dateOfBirth = 'Date of birth is required';
+        } else {
+            const dob = new Date(formData.dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            if (age < 18) {
+                newErrors.dateOfBirth = 'You must be at least 18 years old';
+            }
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const validateStep2 = () => {
         const newErrors = {};
-        if (!formData.phoneCell) newErrors.phoneCell = 'Mobile number is required';
+        const mobileRegex = /^\d{10}$/;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (!formData.phoneCell) {
+            newErrors.phoneCell = 'Mobile number is required';
+        } else if (!mobileRegex.test(formData.phoneCell)) {
+            newErrors.phoneCell = 'Mobile number must be 10 digits';
+        }
+
+        if (formData.zipcode && !/^\d{5,6}$/.test(formData.zipcode)) {
+            newErrors.zipcode = 'Invalid zipcode'; // Basic length check
+        }
 
         if (formData.isCitizen) {
             // Citizens need driving license
             if (!formData.drivingLicenseNo) newErrors.drivingLicenseNo = 'License number is required';
-            if (!formData.licenseValidTill) newErrors.licenseValidTill = 'License validity is required';
+            if (!formData.licenseValidTill) {
+                newErrors.licenseValidTill = 'License validity is required';
+            } else if (new Date(formData.licenseValidTill) <= today) {
+                newErrors.licenseValidTill = 'License must be valid (future date)';
+            }
         } else {
             // Non-citizens need passport
             if (!formData.passportNo) newErrors.passportNo = 'Passport number is required';
-            if (!formData.passportValidTill) newErrors.passportValidTill = 'Passport validity is required';
+            if (!formData.passportValidTill) {
+                newErrors.passportValidTill = 'Passport validity is required';
+            } else if (new Date(formData.passportValidTill) <= today) {
+                newErrors.passportValidTill = 'Passport must be valid (future date)';
+            }
+
+            // DIP validity check if provided
+            if (formData.dipValidTill && new Date(formData.dipValidTill) <= today) {
+                newErrors.dipValidTill = 'DIP must be valid (future date)';
+            }
         }
 
         setErrors(newErrors);
+
+        // Show errors in toast if any specific ones need attention, or just let UI handle it
+        if (Object.keys(newErrors).length > 0) {
+            // Optional: toast.error("Please fix the errors in the form");
+        }
+
         return Object.keys(newErrors).length === 0;
     };
 
@@ -176,7 +241,7 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 py-2">
+        <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 py-2">
             <div className="w-full max-w-lg">
                 <div className="text-center mb-2 flex flex-col items-center">
                     <Link href="/" className="inline-block transition-transform hover:scale-105">
@@ -212,7 +277,7 @@ export default function RegisterPage() {
                                 <Input label="Email *" type="email" name="email" value={formData.email} onChange={handleChange} error={errors.email} />
                                 <Input label="Password *" type="password" name="password" value={formData.password} onChange={handleChange} error={errors.password} />
                                 <Input label="Confirm Password *" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} error={errors.confirmPassword} />
-                                <Input label="Date of Birth" type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} />
+                                <Input label="Date of Birth" type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} error={errors.dateOfBirth} />
                                 <Button type="button" className="w-full" onClick={handleNext}>Next Step</Button>
                             </>
                         )}
@@ -263,7 +328,7 @@ export default function RegisterPage() {
                                     </div>
                                 </div>
 
-                                <Input label="Zipcode" name="zipcode" value={formData.zipcode} onChange={handleChange} />
+                                <Input label="Zipcode" name="zipcode" value={formData.zipcode} onChange={handleChange} error={errors.zipcode} />
 
                                 {/* Citizenship Checkbox */}
                                 <div className="border-t border-b py-4 my-4">
@@ -352,6 +417,7 @@ export default function RegisterPage() {
                                                 name="dipValidTill"
                                                 value={formData.dipValidTill}
                                                 onChange={handleChange}
+                                                error={errors.dipValidTill}
                                             />
                                         </div>
                                     </div>
