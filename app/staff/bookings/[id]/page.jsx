@@ -41,6 +41,17 @@ export default function BookingDetailPage() {
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [transactionId, setTransactionId] = useState(null);
 
+    // ========== HUB-BASED PERMISSION CHECKS ==========
+    // Determine if current staff can perform Handover (pickup) or Return based on their hub
+    const isAdmin = user?.role === 'admin';
+    const userHubId = user?.hubId ? String(user.hubId) : null;
+
+    // Can Handover: Staff hub must match Pickup Hub
+    const canPerformHandover = isAdmin || (userHubId && booking?.pickupHubId && userHubId === String(booking.pickupHubId));
+
+    // Can Return: Staff hub must match Return Hub
+    const canPerformReturn = isAdmin || (userHubId && booking?.returnHubId && userHubId === String(booking.returnHubId));
+
     // Load Razorpay script
     useEffect(() => {
         const script = document.createElement('script');
@@ -423,8 +434,8 @@ export default function BookingDetailPage() {
                 />
             )}
 
-            {/* Action Button - Only show on Step 1 for reserved bookings */}
-            {step === 1 && booking?.status === 'reserved' && (
+            {/* Action Button - Only show on Step 1 for reserved bookings AND if staff can handover */}
+            {step === 1 && booking?.status === 'reserved' && canPerformHandover && (
                 <div className="mt-6">
                     <Button onClick={handleStartHandover} size="lg" className="w-full md:w-auto">
                         🔑 Start Handover Process
@@ -432,8 +443,16 @@ export default function BookingDetailPage() {
                 </div>
             )}
 
-            {/* Return Vehicle - For Active OR Returned bookings */}
-            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && (
+            {/* Permission Warning for Handover */}
+            {step === 1 && booking?.status === 'reserved' && !canPerformHandover && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800 font-medium">⚠️ Cannot Perform Handover</p>
+                    <p className="text-amber-700 text-sm">This booking's pickup location ({booking?.pickupHub}) is not assigned to your hub. Only staff at the pickup hub can process handovers.</p>
+                </div>
+            )}
+
+            {/* Return Vehicle - For Active OR Returned bookings AND if staff can return */}
+            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && canPerformReturn && (
                 <ReturnSection
                     returnDate={returnDate}
                     setReturnDate={setReturnDate}
@@ -442,8 +461,16 @@ export default function BookingDetailPage() {
                 />
             )}
 
-            {/* Invoice Display */}
-            {invoice && (
+            {/* Permission Warning for Return */}
+            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && !canPerformReturn && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800 font-medium">⚠️ Cannot Process Return</p>
+                    <p className="text-amber-700 text-sm">This booking's return location ({booking?.returnHub}) is not assigned to your hub. Only staff at the return hub can process returns and generate invoices.</p>
+                </div>
+            )}
+
+            {/* Invoice Display - Only for staff who can return (or after payment is done) */}
+            {invoice && (canPerformReturn || paymentSuccess || booking?.status === 'completed') && (
                 <InvoiceSection
                     invoice={invoice}
                     paymentSuccess={paymentSuccess || booking?.status === 'completed'}

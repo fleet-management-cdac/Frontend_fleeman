@@ -48,7 +48,7 @@ export default function HandoverPage() {
     const fetchBookings = async () => {
         try {
             let response;
-            // Use hub-filtered bookings if staff has assigned hub
+            // Get bookings that involve this hub (either pickup OR return)
             if (user?.hubId) {
                 response = await getBookingsByHub(user.hubId);
             } else {
@@ -57,12 +57,27 @@ export default function HandoverPage() {
 
             if (response.success) {
                 const allBookings = response.data || [];
-                // Filter for pickup (reserved) and return (active) bookings
-                const reservedBookings = allBookings.filter(b => b.status === 'reserved');
-                const activeBookings = allBookings.filter(b => b.status === 'active');
-                setBookings(reservedBookings);
-                setFilteredBookings(reservedBookings);
-                setReturnBookings(activeBookings);
+
+                let reserved = allBookings.filter(b => b.status === 'reserved');
+                let active = allBookings.filter(b => b.status === 'active');
+
+                // Logic Refinement: Strict separation of duties
+                // If I am staff at Hub A:
+                // - I should only see Pickups starting from Hub A
+                // - I should only see Returns ending at Hub A
+                if (user?.hubId) {
+                    const userHubId = String(user.hubId);
+
+                    // Filter Pickups: Must be picking up FROM my hub
+                    reserved = reserved.filter(b => String(b.pickupHubId) === userHubId);
+
+                    // Filter Returns: Must be returning TO my hub
+                    active = active.filter(b => String(b.returnHubId) === userHubId);
+                }
+
+                setBookings(reserved);
+                setFilteredBookings(reserved);
+                setReturnBookings(active);
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
