@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../context/AuthContext';
-import { getAllBookings } from '../../../services/bookingService';
+import { getAllBookings, getBookingsByHub } from '../../../services/bookingService';
 import Card from '../../../components/ui/Card';
 import Spinner from '../../../components/ui/Spinner';
 import Badge from '../../../components/ui/Badge';
@@ -23,14 +23,32 @@ export default function StaffDashboard() {
     const [displayedBookings, setDisplayedBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [noHubAssigned, setNoHubAssigned] = useState(false);
 
     useEffect(() => {
-        fetchDashboardData();
-    }, []);
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [user]);
 
     const fetchDashboardData = async () => {
         try {
-            const response = await getAllBookings();
+            let response;
+            // Staff with hubId: show only hub-specific bookings
+            // Admin: show all bookings
+            if (user?.role === 'admin') {
+                response = await getAllBookings();
+                setNoHubAssigned(false);
+            } else if (user?.hubId) {
+                response = await getBookingsByHub(user.hubId);
+                setNoHubAssigned(false);
+            } else {
+                // Staff without hub - show warning
+                setNoHubAssigned(true);
+                setLoading(false);
+                return;
+            }
+
             if (response.success) {
                 const bookings = response.data || [];
                 // Sort by date descending
@@ -102,6 +120,23 @@ export default function StaffDashboard() {
         return <div className="flex items-center justify-center h-screen"><Spinner size="lg" /></div>;
     }
 
+    // Staff without hub assigned
+    if (noHubAssigned) {
+        return (
+            <div className="min-h-screen bg-gray-50/50 p-8">
+                <div className="max-w-2xl mx-auto">
+                    <Card className="p-8 text-center">
+                        <span className="text-4xl block mb-4">⚠️</span>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">No Hub Assigned</h2>
+                        <p className="text-gray-500 mb-4">
+                            You are not assigned to any hub. Please contact an administrator to assign you to a hub to view bookings.
+                        </p>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50/50 p-8">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -111,9 +146,9 @@ export default function StaffDashboard() {
                         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Staff Dashboard</h1>
                         <p className="text-sm text-gray-500 mt-1">
                             Overview of fleet operations for <span className="font-medium text-gray-900">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            {user?.hubId && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Your Hub Only</span>}
                         </p>
                     </div>
-
                 </div>
 
                 {/* KPI Grid */}
@@ -216,8 +251,8 @@ export default function StaffDashboard() {
                         </Card>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 

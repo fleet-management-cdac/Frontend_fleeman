@@ -41,6 +41,7 @@ export function AuthProvider({ children }) {
                 id: decoded.userId,
                 email: decoded.email || decoded.sub,
                 role: decoded.role,
+                hubId: decoded.hubId || null,
                 isOAuth: decoded.isOAuth || false,
             };
             setUser(userData);
@@ -88,6 +89,7 @@ export function AuthProvider({ children }) {
             id: decoded.userId,
             email: decoded.email || decoded.sub,
             role: decoded.role,
+            hubId: decoded.hubId || null,
             isOAuth: decoded.isOAuth || false,
         };
         setUser(userData);

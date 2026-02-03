@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getAllBookings, updateBookingStatus } from '../../../services/bookingService';
+import { getAllBookings, getBookingsByHub, updateBookingStatus } from '../../../services/bookingService';
+import { useAuth } from '../../../context/AuthContext';
 import Card from '../../../components/ui/Card';
 import Button from '../../../components/ui/Button';
 import Badge from '../../../components/ui/Badge';
@@ -11,18 +12,33 @@ import Spinner from '../../../components/ui/Spinner';
 import { formatDateTime } from '../../../lib/utils';
 
 export default function StaffBookingsPage() {
+    const { user } = useAuth();
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all');
+    const [noHubAssigned, setNoHubAssigned] = useState(false);
 
     useEffect(() => {
-        fetchBookings();
-    }, []);
+        if (user) {
+            fetchBookings();
+        }
+    }, [user]);
 
     const fetchBookings = async () => {
         try {
-            const response = await getAllBookings();
+            let response;
+            // If staff has assigned hub, use hub-filtered bookings
+            if (user?.hubId) {
+                response = await getBookingsByHub(user.hubId);
+                setNoHubAssigned(false);
+            } else {
+                // Fallback: show all bookings (for admin or unassigned staff)
+                response = await getAllBookings();
+                if (user?.role === 'staff') {
+                    setNoHubAssigned(true);
+                }
+            }
             if (response.success) setBookings(response.data || []);
         } catch (error) {
             console.error('Error fetching bookings:', error);
@@ -55,8 +71,15 @@ export default function StaffBookingsPage() {
         <div className="p-8">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">Manage Bookings</h1>
-                <p className="text-gray-500">{bookings.length} total bookings</p>
+                <p className="text-gray-500">{bookings.length} total bookings{user?.hubId ? ` for your hub` : ''}</p>
             </div>
+
+            {noHubAssigned && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800 font-medium">⚠️ No Hub Assigned</p>
+                    <p className="text-amber-700 text-sm">You are seeing all bookings. Contact an admin to assign you to a specific hub for filtered access.</p>
+                </div>
+            )}
 
             <Card className="p-4 mb-6">
                 <div className="flex flex-col sm:flex-row gap-4">

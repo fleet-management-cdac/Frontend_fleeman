@@ -17,3 +17,9 @@ export const getHandoversByBooking = async (bookingId) => {
     const response = await api.get(`/api/handovers/booking/${bookingId}`);
     return response.data;
 };
+
+// Process return handover - updates vehicle hub to return location
+export const processReturnHandover = async (handoverData) => {
+    const response = await api.post('/api/handovers/return', handoverData);
+    return response.data;
+};
