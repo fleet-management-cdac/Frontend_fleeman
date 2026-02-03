@@ -60,9 +60,10 @@ export default function StaffVehiclesPage() {
         try {
             // If hubId is provided, fetch specific hub inventory
             // Otherwise fetch all inventory (admin only)
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
             const url = hubId
-                ? `http://localhost:8080/api/inventory/hub/${hubId}`
-                : `http://localhost:8080/api/inventory/all`;
+                ? `${API_BASE_URL}/api/inventory/hub/${hubId}`
+                : `${API_BASE_URL}/api/inventory/all`;
 
             const token = localStorage.getItem('token');
             const res = await fetch(url, {

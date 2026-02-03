@@ -124,7 +124,7 @@ function VehiclesList() {
                                     <div className="h-40 w-full flex items-center justify-center">
                                         {item.imgUrl ? (
                                             <img
-                                                src={`http://localhost:8080${item.imgUrl}`}
+                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${item.imgUrl}`}
                                                 alt={item.typeName || item.vehicleName || 'Vehicle'}
                                                 className="max-w-full max-h-full object-contain drop-shadow-lg transform transition-transform hover:scale-110 duration-500"
                                                 onError={(e) => { e.target.style.display = 'none'; }}

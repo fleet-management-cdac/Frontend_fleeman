@@ -74,7 +74,8 @@ export default function UploadLocationsPage() {
 
         try {
             // Replace with your actual API_BASE_URL if needed
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/locations/upload`, {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const response = await fetch(`${API_BASE_URL}/api/locations/upload`, {
                 method: 'POST',
                 body: formData,
                 // Do NOT set Content-Type header manually when sending FormData

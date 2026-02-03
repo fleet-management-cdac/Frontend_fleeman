@@ -14,7 +14,8 @@ export const register = async (userData) => {
 
 // Google OAuth - redirect to backend
 export const googleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
 };
 
 // Get user profile by userDetailsId
