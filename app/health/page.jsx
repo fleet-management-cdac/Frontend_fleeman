@@ -10,7 +10,8 @@ export default function HealthPage() {
 
     const fetchHealth = async () => {
         try {
-            const res = await fetch('http://localhost:8080/actuator/health');
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const res = await fetch(`${API_BASE_URL}/actuator/health`);
             if (!res.ok) throw new Error('Failed to fetch health data');
             const data = await res.json();
             setHealth(data);

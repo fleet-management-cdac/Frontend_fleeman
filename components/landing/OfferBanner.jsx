@@ -9,9 +9,8 @@ export default function OfferBanner() {
     useEffect(() => {
         const fetchOffers = async () => {
             try {
-                // Using relative path to proxy or full URL if needed. 
-                // Assuming client-side fetch to localhost:8080 as per instructions/patterns used in Health page
-                const res = await fetch('http://localhost:8080/api/offers');
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+                const res = await fetch(`${API_BASE_URL}/api/offers`);
                 if (res.ok) {
                     const data = await res.json();
                     // Find the first active offer
