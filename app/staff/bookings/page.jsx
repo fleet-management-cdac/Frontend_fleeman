@@ -28,12 +28,18 @@ export default function StaffBookingsPage() {
     const fetchBookings = async () => {
         try {
             let response;
-            // If staff has assigned hub, use hub-filtered bookings
-            if (user?.hubId) {
-                response = await getBookingsByHub(user.hubId);
+            // Since staff can now process returns at ANY hub, show all bookings
+            // Staff can only handover at their pickup hub (validated in booking detail page)
+            // But they need to see all active bookings for potential return processing
+            if (user?.role === 'admin') {
+                response = await getAllBookings();
+            } else if (user?.hubId) {
+                // Staff with assigned hub: show ALL bookings for flexible return processing
+                // The booking detail page handles permission for handover vs return
+                response = await getAllBookings();
                 setNoHubAssigned(false);
             } else {
-                // Fallback: show all bookings (for admin or unassigned staff)
+                // Staff without hub assignment
                 response = await getAllBookings();
                 if (user?.role === 'staff') {
                     setNoHubAssigned(true);
@@ -71,13 +77,13 @@ export default function StaffBookingsPage() {
         <div className="p-8">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900">Manage Bookings</h1>
-                <p className="text-gray-500">{bookings.length} total bookings{user?.hubId ? ` for your hub` : ''}</p>
+                <p className="text-gray-500">{bookings.length} total bookings{user?.hubId ? ` (You can handover at your hub, returns at any hub)` : ''}</p>
             </div>
 
             {noHubAssigned && (
                 <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-amber-800 font-medium">⚠️ No Hub Assigned</p>
-                    <p className="text-amber-700 text-sm">You are seeing all bookings. Contact an admin to assign you to a specific hub for filtered access.</p>
+                    <p className="text-amber-700 text-sm">You can view all bookings but need a hub assignment to process handovers and returns.</p>
                 </div>
             )}
 

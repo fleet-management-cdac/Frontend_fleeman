@@ -34,13 +34,15 @@ export default function StaffDashboard() {
     const fetchDashboardData = async () => {
         try {
             let response;
-            // Staff with hubId: show only hub-specific bookings
-            // Admin: show all bookings
+            // Since staff can now process returns at ANY hub, show all bookings
+            // Staff can only handover at their pickup hub (validated in booking detail page)
+            // But they need to see all active bookings for potential return processing
             if (user?.role === 'admin') {
                 response = await getAllBookings();
                 setNoHubAssigned(false);
             } else if (user?.hubId) {
-                response = await getBookingsByHub(user.hubId);
+                // Staff with assigned hub: show ALL bookings for flexible return processing
+                response = await getAllBookings();
                 setNoHubAssigned(false);
             } else {
                 // Staff without hub - show warning
@@ -146,7 +148,8 @@ export default function StaffDashboard() {
                         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Staff Dashboard</h1>
                         <p className="text-sm text-gray-500 mt-1">
                             Overview of fleet operations for <span className="font-medium text-gray-900">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                            {user?.hubId && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Your Hub Only</span>}
+                            {user?.hubName && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">{user.hubName} Hub</span>}
+                            {user?.hubId && !user?.hubName && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Hub #{user.hubId}</span>}
                         </p>
                     </div>
                 </div>

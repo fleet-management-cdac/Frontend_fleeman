@@ -22,7 +22,9 @@ export const createBooking = async (bookingData) => {
 
 // Get booking by ID
 export const getBookingById = async (bookingId) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         credentials: 'omit',
     });
     return response.json();
@@ -69,8 +71,10 @@ export const getBookingsByHub = async (hubId) => {
 
 // Update booking status (PATCH with query param)
 export const updateBookingStatus = async (bookingId, status) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/status?status=${status}`, {
         method: 'PATCH',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         credentials: 'omit',
     });
     return response.json();
@@ -83,8 +87,10 @@ export const cancelBooking = async (bookingId) => {
 
 // Delete booking
 export const deleteBooking = async (bookingId) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`, {
         method: 'DELETE',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         credentials: 'omit',
     });
     return response.json();

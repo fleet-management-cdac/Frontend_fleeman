@@ -320,7 +320,7 @@ export default function StaffVehiclesPage() {
                                                 <div className="flex justify-between py-1 pt-2">
                                                     <span>Next Service</span>
                                                     <span className={new Date(vehicle.nextServiceDate) < new Date() ? "text-red-600 font-bold" : "text-gray-900 font-medium"}>
-                                                        {new Date(vehicle.nextServiceDate).toLocaleDateString()}
+                                                        {vehicle.nextServiceDate ? new Date(vehicle.nextServiceDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>

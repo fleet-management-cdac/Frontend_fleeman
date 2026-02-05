@@ -75,8 +75,17 @@ export default function UploadLocationsPage() {
         try {
             // Replace with your actual API_BASE_URL if needed
             const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+            // Get token from storage
+            const token = localStorage.getItem('token');
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`${API_BASE_URL}/api/locations/upload`, {
                 method: 'POST',
+                headers: headers,
                 body: formData,
                 // Do NOT set Content-Type header manually when sending FormData
             });

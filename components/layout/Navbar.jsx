@@ -58,9 +58,9 @@ export default function Navbar() {
                                 </Link>
                                 <div className="relative group">
                                     <button className="flex items-center gap-2 text-sm font-bold text-gray-800 hover:text-blue-700 transition">
-                                        <span>Use Profile</span>
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200">
-                                            {user.email?.[0].toUpperCase()}
+                                        <span>{user.name || user.email?.split('@')[0]}</span>
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200 uppercase">
+                                            {(user.name ? user.name[0] : user.email?.[0])}
                                         </div>
                                     </button>
 
@@ -69,7 +69,7 @@ export default function Navbar() {
                                         <div className="py-2">
                                             <div className="px-4 py-2 border-b border-gray-100 mb-1">
                                                 <p className="text-xs text-gray-500">Signed in as</p>
-                                                <p className="text-sm font-bold text-gray-900 truncate">{user.email}</p>
+                                                <p className="text-sm font-bold text-gray-900 truncate" title={user.email}>{user.email}</p>
                                             </div>
                                             <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600">Profile Settings</Link>
                                             <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Sign Out</button>

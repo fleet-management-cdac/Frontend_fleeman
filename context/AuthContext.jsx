@@ -37,41 +37,65 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem('token');
         if (token && !isTokenExpired(token)) {
             const decoded = parseJwt(token);
-            const userData = {
+            let userData = {
                 id: decoded.userId,
                 email: decoded.email || decoded.sub,
                 role: decoded.role,
                 hubId: decoded.hubId || null,
                 isOAuth: decoded.isOAuth || false,
+                name: null // Initialize name
             };
-            setUser(userData);
 
-            // Check if profile is complete for OAuth users
+            // Calculate profile completeness and fetch name
             try {
-                // If staff, we consider profile complete or irrelevant for this check
-                if (userData.role === 'staff') {
-                    setProfileComplete(true);
-                    localStorage.setItem('profileComplete', 'true');
-                } else {
-                    const response = await getUserDetails(decoded.userId);
-                    if (response.success && response.data) {
-                        const details = response.data;
-                        // Profile is complete if phone number exists
+                // Fetch details for ALL users to get name
+                const response = await getUserDetails(decoded.userId);
+
+                if (response.success && response.data) {
+                    const details = response.data;
+
+                    // Set name if available
+                    if (details.firstName) {
+                        userData.name = `${details.firstName} ${details.lastName || ''}`.trim();
+                    }
+
+                    // Set hub name if available
+                    if (details.hubName) {
+                        userData.hubName = details.hubName;
+                    }
+
+                    // Profile completeness logic
+                    if (userData.role === 'staff') {
+                        setProfileComplete(true);
+                        localStorage.setItem('profileComplete', 'true');
+                    } else {
+                        // Customer profile check
                         const isComplete = !!details.phoneCell;
                         setProfileComplete(isComplete);
                         localStorage.setItem('profileComplete', isComplete ? 'true' : 'false');
+                    }
+                } else {
+                    // No details found
+                    if (userData.role === 'staff') {
+                        setProfileComplete(true);
+                        localStorage.setItem('profileComplete', 'true');
                     } else {
                         setProfileComplete(false);
                         localStorage.setItem('profileComplete', 'false');
                     }
                 }
             } catch (error) {
-                // If can't fetch details, assume incomplete for OAuth users
-                if (decoded.isOAuth) {
+                // Error fetching details
+                if (userData.role === 'staff') {
+                    setProfileComplete(true);
+                    localStorage.setItem('profileComplete', 'true');
+                } else if (decoded.isOAuth) {
                     setProfileComplete(false);
                     localStorage.setItem('profileComplete', 'false');
                 }
             }
+
+            setUser(userData);
         } else {
             localStorage.removeItem('token');
             localStorage.removeItem('profileComplete');
@@ -85,36 +109,66 @@ export function AuthProvider({ children }) {
         if (typeof window === 'undefined') return;
         localStorage.setItem('token', token);
         const decoded = parseJwt(token);
-        const userData = {
+        let userData = {
             id: decoded.userId,
             email: decoded.email || decoded.sub,
             role: decoded.role,
             hubId: decoded.hubId || null,
             isOAuth: decoded.isOAuth || false,
+            name: null
         };
-        setUser(userData);
 
-        // Check profile completeness
         try {
-            if (userData.role === 'staff') {
-                setProfileComplete(true);
-                localStorage.setItem('profileComplete', 'true');
-                return true;
-            }
-
+            // Fetch details for name and completeness
             const response = await getUserDetails(decoded.userId);
+
             if (response.success && response.data) {
-                const isComplete = !!response.data.phoneCell;
+                const details = response.data;
+
+                if (details.firstName) {
+                    userData.name = `${details.firstName} ${details.lastName || ''}`.trim();
+                }
+
+                // Set hub name if available
+                if (details.hubName) {
+                    userData.hubName = details.hubName;
+                }
+
+                if (userData.role === 'staff') {
+                    setProfileComplete(true);
+                    localStorage.setItem('profileComplete', 'true');
+                    setUser(userData);
+                    return true;
+                }
+
+                const isComplete = !!details.phoneCell;
                 setProfileComplete(isComplete);
                 localStorage.setItem('profileComplete', isComplete ? 'true' : 'false');
+                setUser(userData);
                 return isComplete;
             }
         } catch (error) {
+            // Error handling
+            if (userData.role === 'staff') {
+                setProfileComplete(true);
+                localStorage.setItem('profileComplete', 'true');
+                setUser(userData);
+                return true;
+            }
+
             if (decoded.isOAuth) {
                 setProfileComplete(false);
                 localStorage.setItem('profileComplete', 'false');
+                setUser(userData);
                 return false;
             }
+        }
+
+        setUser(userData);
+        // Fallback for non-OAuth customer with error -> assume complete or let regular flow handle
+        if (userData.role === 'customer' && !userData.isOAuth) {
+            // Usually implies login successful but maybe no details yet? maintain existing behavior
+            return true;
         }
         return true;
     }, []);
