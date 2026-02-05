@@ -46,6 +46,7 @@ export default function StaffSidebar() {
         {
             name: 'Hubs',
             href: '/staff/upload',
+            adminOnly: true,  // Only show for admin users
             icon: (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -54,6 +55,12 @@ export default function StaffSidebar() {
             )
         }
     ];
+
+    // Filter menu items based on user role
+    const visibleMenuItems = menuItems.filter(item => {
+        if (item.adminOnly && user?.role !== 'admin') return false;
+        return true;
+    });
 
     return (
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
@@ -70,7 +77,7 @@ export default function StaffSidebar() {
 
             {/* Navigation */}
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                {menuItems.map((item) => {
+                {visibleMenuItems.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                     return (
                         <Link

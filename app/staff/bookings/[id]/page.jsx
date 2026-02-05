@@ -49,8 +49,8 @@ export default function BookingDetailPage() {
     // Can Handover: Staff hub must match Pickup Hub
     const canPerformHandover = isAdmin || (userHubId && booking?.pickupHubId && userHubId === String(booking.pickupHubId));
 
-    // Can Return: Staff hub must match Return Hub
-    const canPerformReturn = isAdmin || (userHubId && booking?.returnHubId && userHubId === String(booking.returnHubId));
+    // Can Return: Any staff with a hub can process return (vehicle returns to staff's hub)
+    const canPerformReturn = isAdmin || !!userHubId;
 
     // Load Razorpay script
     useEffect(() => {
@@ -252,7 +252,8 @@ export default function BookingDetailPage() {
                 credentials: 'omit',
                 body: JSON.stringify({
                     bookingId: parseInt(bookingId),
-                    actualReturnDate: returnDate
+                    actualReturnDate: returnDate,
+                    staffHubId: userHubId ? parseInt(userHubId) : null  // Pass staff's hub for vehicle location update
                 })
             });
 
@@ -461,11 +462,10 @@ export default function BookingDetailPage() {
                 />
             )}
 
-            {/* Permission Warning for Return */}
-            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && !canPerformReturn && (
-                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-amber-800 font-medium">⚠️ Cannot Process Return</p>
-                    <p className="text-amber-700 text-sm">This booking's return location ({booking?.returnHub}) is not assigned to your hub. Only staff at the return hub can process returns and generate invoices.</p>
+            {/* Info: Return can be processed at any hub */}
+            {step === 1 && (booking?.status === 'active' || booking?.status === 'returned') && !invoice && canPerformReturn && userHubId && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 text-sm">ℹ️ Vehicle will be registered at your hub after return.</p>
                 </div>
             )}
 
