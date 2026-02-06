@@ -150,7 +150,8 @@ export default function BookingDetailPage() {
             const params = new URLSearchParams();
 
             // Mandatory params based on user request
-            if (booking.vehicleTypeId) params.append('vehicleTypeId', booking.vehicleTypeId);
+            // CHANGED: Removed vehicleTypeId constraint to allow upgrades
+            // if (booking.vehicleTypeId) params.append('vehicleTypeId', booking.vehicleTypeId);
 
             // Send hubId compulsory
             if (hubId) {
@@ -162,7 +163,7 @@ export default function BookingDetailPage() {
             if (booking.pickupDatetime) params.append('pickupDate', formatDateParam(booking.pickupDatetime));
             if (booking.returnDatetime) params.append('returnDate', formatDateParam(booking.returnDatetime));
 
-            const url = `${API_BASE_URL}/api/vehicles/available?${params.toString()}`;
+            const url = `${API_BASE_URL}/api/vehicles/available-for-handover?${params.toString()}`;
             console.log('Fetching from:', url);
 
             const token = localStorage.getItem('token');
@@ -190,9 +191,14 @@ export default function BookingDetailPage() {
         setStep(3);
     };
 
-    const handleCompleteHandover = async () => {
-        if (!selectedVehicle || !user?.id) return;
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+    const handleCompleteHandover = () => {
+        if (!selectedVehicle || !user?.id) return;
+        setShowConfirmModal(true);
+    };
+
+    const processHandover = async () => {
         setProcessing(true);
         setMessage({ type: '', text: '' });
 
@@ -216,6 +222,7 @@ export default function BookingDetailPage() {
             const data = await response.json();
 
             if (data.success) {
+                setShowConfirmModal(false);
                 setMessage({
                     type: 'success',
                     text: `✅ Handover complete! Vehicle ${selectedVehicle.registrationNo} has been handed over.`
@@ -226,10 +233,12 @@ export default function BookingDetailPage() {
                 }, 2000);
             } else {
                 setMessage({ type: 'error', text: data.message || 'Handover failed' });
+                setShowConfirmModal(false);
             }
         } catch (error) {
             console.error('Handover error:', error);
             setMessage({ type: 'error', text: 'Failed to process handover' });
+            setShowConfirmModal(false);
         } finally {
             setProcessing(false);
         }
@@ -240,6 +249,8 @@ export default function BookingDetailPage() {
     const handleReturn = async () => {
         setProcessing(true);
         setMessage({ type: '', text: '' });
+
+        const actualReturnDate = new Date().toISOString().split('T')[0];
 
         try {
             const token = localStorage.getItem('token');
@@ -252,7 +263,7 @@ export default function BookingDetailPage() {
                 credentials: 'omit',
                 body: JSON.stringify({
                     bookingId: parseInt(bookingId),
-                    actualReturnDate: returnDate,
+                    actualReturnDate: actualReturnDate,
                     staffHubId: userHubId ? parseInt(userHubId) : null  // Pass staff's hub for vehicle location update
                 })
             });
@@ -478,6 +489,59 @@ export default function BookingDetailPage() {
                     handlePayment={handlePayment}
                     processing={processing}
                 />
+            )}
+            {/* Confirmation Modal */}
+            {showConfirmModal && selectedVehicle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-[5px] bg-white/30">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-md w-full p-6 transform transition-all scale-100">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">🔑</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900">Confirm Handover</h3>
+                            <p className="text-gray-500 mt-2">
+                                Please verify the details before handing over the keys.
+                            </p>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3 text-sm">
+                            <div className="flex justify-between border-b pb-2">
+                                <span className="text-gray-500">Customer</span>
+                                <span className="font-medium text-gray-900">{booking.firstName} {booking.lastName}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-2">
+                                <span className="text-gray-500">Vehicle</span>
+                                <span className="font-medium text-gray-900">{selectedVehicle.company} {selectedVehicle.model}</span>
+                            </div>
+                            <div className="flex justify-between border-b pb-2">
+                                <span className="text-gray-500">Registration</span>
+                                <span className="font-medium text-gray-900">{selectedVehicle.registrationNo}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Fuel Level</span>
+                                <span className="font-bold text-purple-600 capitalize">{fuelStatus}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1"
+                                disabled={processing}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={processHandover}
+                                loading={processing}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                                Confirm Handover
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

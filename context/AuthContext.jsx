@@ -125,6 +125,7 @@ export function AuthProvider({ children }) {
             if (response.success && response.data) {
                 const details = response.data;
 
+                // Set name if available
                 if (details.firstName) {
                     userData.name = `${details.firstName} ${details.lastName || ''}`.trim();
                 }

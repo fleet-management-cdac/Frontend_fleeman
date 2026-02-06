@@ -190,11 +190,16 @@ function BookingForm() {
         return Object.keys(newErrors).length === 0;
     };
 
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+
     const handleSubmit = async () => {
         if (!validateForm()) {
             return;
         }
+        setShowConfirmModal(true);
+    };
 
+    const handleConfirmBooking = async () => {
         setLoading(true);
 
         try {
@@ -229,15 +234,18 @@ function BookingForm() {
             const response = await createBooking(bookingPayload);
 
             if (response.success) {
+                setShowConfirmModal(false);
                 setBookingResult(response.data);
                 setStep(3);
                 toast.success('Booking confirmed successfully!');
             } else {
                 toast.error(response.message || 'Booking failed');
+                setShowConfirmModal(false);
             }
         } catch (err) {
             const msg = err.message || 'Booking failed. Please try again.';
             toast.error(msg);
+            setShowConfirmModal(false);
         } finally {
             setLoading(false);
         }
@@ -610,6 +618,54 @@ function BookingForm() {
                     </Card>
                 )
             }
+
+            {/* Confirmation Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-[5px] bg-white/30">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-md w-full p-6 transform transition-all scale-100">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">📅</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900">Confirm Booking?</h3>
+                            <p className="text-gray-500 mt-2">
+                                You are about to book <strong>{pricing.breakdown.totalDays} days</strong> rental.
+                            </p>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Dates</span>
+                                <span className="font-medium">
+                                    {new Date(pickupDate).toLocaleDateString()} - {new Date(returnDate).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Total Amount</span>
+                                <span className="font-bold text-blue-600 text-lg">{formatCurrency(pricing.total)}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1"
+                                disabled={loading}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmBooking}
+                                loading={loading}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                                Yes, Confirm
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Step 3: Confirmation */}
             {
