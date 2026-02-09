@@ -22,7 +22,7 @@ export default function ReturnSection({
                     </span></p>
                 </div>
                 <Button onClick={handleReturn} disabled={processing} size="lg">
-                    {processing ? 'Processing...' : '📋 Generate Invoice'}
+                    {processing ? 'Processing...' : 'Process Return'}
                 </Button>
             </div>
         </Card>

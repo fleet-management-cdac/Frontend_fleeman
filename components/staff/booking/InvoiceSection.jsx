@@ -52,7 +52,7 @@ export default function InvoiceSection({
                     <div className="text-right">
                         <h2 className="text-2xl font-bold text-gray-600 uppercase tracking-widest">Invoice</h2>
                         <p className="text-lg font-mono font-bold text-gray-900 mt-1">#{invoice.invoiceId}</p>
-                        <p className="text-sm text-gray-500 mt-1">Date: {new Date().toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500 mt-1">Date: {new Date().toLocaleDateString('en-GB')}</p>
                         {transactionId && (
                             <div className="mt-2 p-2 bg-green-50 border border-green-100 rounded text-xs inline-block">
                                 <p className="text-green-700 font-bold">PAID</p>
@@ -79,7 +79,7 @@ export default function InvoiceSection({
                     <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
                         <div className="text-sm">
                             <p className="text-gray-500">Rental Period</p>
-                            <p className="font-bold text-gray-900">{invoice.handoverDate} — {invoice.returnDate}</p>
+                            <p className="font-bold text-gray-900">{new Date(invoice.handoverDate).toLocaleDateString('en-GB')} — {new Date(invoice.returnDate).toLocaleDateString('en-GB')}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-gray-500 text-sm">Duration</p>
@@ -163,11 +163,11 @@ export default function InvoiceSection({
                     </div>
                     <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-500">Handover Date</span>
-                        <span className="font-medium">{invoice.handoverDate}</span>
+                        <span className="font-medium">{new Date(invoice.handoverDate).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
                         <span className="text-gray-500">Return Date</span>
-                        <span className="font-medium">{invoice.returnDate}</span>
+                        <span className="font-medium">{new Date(invoice.returnDate).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div className="flex justify-between py-2">
                         <span className="text-gray-500">Total Days</span>
